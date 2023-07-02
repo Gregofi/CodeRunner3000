@@ -3,3 +3,10 @@ services:
     build: website
     ports:
       - "80:80"
+    links:
+      - "runtime:runtime"
+
+  runtime:
+    build: runtime
+    ports:
+      - "7000:7000"

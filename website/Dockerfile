@@ -5,7 +5,7 @@ RUN apt-get update -y && \
         python3 \
         python3-pip \
         nginx && \
-    pip install flask
+    pip install flask requests
 
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 
