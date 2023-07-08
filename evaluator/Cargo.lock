@@ -82,6 +82,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "evaluator"
+version = "0.1.0"
+dependencies = [
+ "crossbeam-channel",
+ "rand",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -261,17 +272,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "567664f262709473930a4bf9e51bf2ebf3348f2e748ccc50dea20646858f8f29"
 dependencies = [
  "bitflags",
-]
-
-[[package]]
-name = "runtime"
-version = "0.1.0"
-dependencies = [
- "crossbeam-channel",
- "rand",
- "serde",
- "serde_json",
- "tokio",
 ]
 
 [[package]]

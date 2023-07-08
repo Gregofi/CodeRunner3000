@@ -15,4 +15,4 @@ in Rust. But I wanted to take the opportunity to learn this language.
 ## The architecture
 There are/will be multiple components:
 - website: The website which is accesible to the users
-- runtime: The evaluator of the code that users write into the website.
+- evaluator: The evaluator of the code that users write into the website.

@@ -4,9 +4,9 @@ services:
     ports:
       - "80:80"
     links:
-      - "runtime:runtime"
+      - "evaluator:evaluator"
 
-  runtime:
-    build: runtime
+  evaluator:
+    build: evaluator
     ports:
       - "7000:7000"

@@ -48,6 +48,6 @@ def python_interpreter():
 def run_python():
     code = request.json
     app.logger.info("Received request for compilation, sending to server")
-    response = requests.post("http://runtime:7000/run", json=code)
+    response = requests.post("http://evaluator:7000/run", json=code)
     json = response.json()
     return json

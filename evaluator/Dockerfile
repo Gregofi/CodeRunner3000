@@ -18,4 +18,4 @@ COPY --from=0 /rust/app/ ./
 
 EXPOSE 7000
 
-CMD ["./target/release/runtime"]
+CMD ["./target/release/evaluator"]
