@@ -7,16 +7,15 @@ use std::fs::File;
 use std::process::Command;
 use std::str;
 
+use rand::{distributions::Alphanumeric, Rng};
+
 use serde::{Deserialize, Serialize};
 use serde_json;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
-// TODO: This is bad, since the tasks run asynchronously.
-// The name needs to be different for each task, maybe
-// some random hash or something.
-const SOURCE_FILE: &str = "source";
+const TIMEOUT: &str = "5";
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 enum Language {
@@ -40,14 +39,32 @@ fn create_error(err: &str) -> Error {
     Error::new(ErrorKind::Other, err)
 }
 
-fn run_python(file_name: &str) -> Result<ResponsePayload> {
-    let output = Command::new("python3")
-        .arg(file_name)
+fn random_filename() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect()
+}
+
+fn run_python(filename: &str) -> Result<ResponsePayload> {
+    println!("Running python3 command on file {}", filename);
+    let output = Command::new("timeout")
+        .arg(TIMEOUT)
+        .arg("python3")
+        .arg(filename)
         .output()?;
+
+    let stderr = if output.status.code().is_none() {
+        "The program timeouted".to_string()
+    } else {
+        str::from_utf8(&output.stderr).unwrap().to_string()
+    };
+
     Ok(ResponsePayload {
         stdout: str::from_utf8(&output.stdout).unwrap().to_string(),
-        stderr: str::from_utf8(&output.stderr).unwrap().to_string(),
-        exit_code: output.status.code().unwrap(),
+        stderr,
+        exit_code: output.status.code().unwrap_or(124),
     })
 }
 
@@ -69,7 +86,7 @@ async fn handle_connection(sock: TcpStream) -> Result<()> {
     let json = request.content.unwrap();
     let instructions: RequestPayload = serde_json::from_str(&json)?;
 
-    let filename = SOURCE_FILE.to_string() + get_extension(&instructions.language);
+    let filename = random_filename() + get_extension(&instructions.language);
     let mut file = File::create(&filename)?;
     file.write_all(&instructions.code.as_bytes())?;
 
