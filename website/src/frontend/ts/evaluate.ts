@@ -1,4 +1,4 @@
-function code_result(this: XMLHttpRequest) {
+export function code_result(this: XMLHttpRequest) {
     if (this.readyState !== this.DONE || this.status !== 200) {
         return;
     }
@@ -11,7 +11,7 @@ function code_result(this: XMLHttpRequest) {
     stderr.value = `exit code: ${response.exit_code}\n` + response.stderr;
 }
 
-const run_code = () => {
+export const run_code = () => {
     const code_area = <HTMLTextAreaElement>document.getElementById("code");
     const code = code_area.value;
     const payload = {"language": "Python", "code": code};
@@ -23,3 +23,6 @@ const run_code = () => {
     req.setRequestHeader('Content-Type', 'application/json');
     req.send(JSON.stringify(payload));
 }
+
+const run_code_btn = <HTMLButtonElement>document.getElementById('run-code');
+run_code_btn.addEventListener('click', run_code);

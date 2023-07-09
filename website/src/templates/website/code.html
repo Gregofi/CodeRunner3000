@@ -1,11 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
 Run your code here!
 <textarea id="code" rows="5" cols="33">
 print("Hello, World!")
 </textarea>
-<button id="run-code" onclick="run_code()">Run</button>
+<button id="run-code">Run</button>
 
 <textarea id="stdout" rows="5" cols="33">
 </textarea>
 <textarea id="stderr" rows="5" cols="33">
 </textarea>
-<script src="{{ url_for('static', filename='js/evaluate.js') }}"></script>
+{% endblock %}

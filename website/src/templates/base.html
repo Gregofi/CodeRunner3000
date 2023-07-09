@@ -2,7 +2,9 @@
 <head>
 </head>
 <body>
+    <h1>Kapi</h1>
     <section class="content">
         {% block content %}{% endblock %}
     </section>
+    <script src="{{ url_for('static', filename='js/bundled.js') }}"></script>
 </body>
