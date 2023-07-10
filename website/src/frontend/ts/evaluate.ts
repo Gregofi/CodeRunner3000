@@ -1,3 +1,20 @@
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+// The editor
+
+const container = document.getElementById('code');
+const editor = monaco.editor.create(container!, {
+    value: [
+        'def fact(n):',
+        '\tif n == 0:',
+        '\t\treturn 1',
+        '\telse:',
+        '\t\treturn n * fact(n - 1)',
+        '',
+        'print(fact(5))'
+    ].join('\n'),
+	language: 'python'
+});
+
 export function code_result(this: XMLHttpRequest) {
     if (this.readyState !== this.DONE || this.status !== 200) {
         return;
@@ -12,8 +29,7 @@ export function code_result(this: XMLHttpRequest) {
 }
 
 export const run_code = () => {
-    const code_area = <HTMLTextAreaElement>document.getElementById("code");
-    const code = code_area.value;
+    const code = editor.getValue();
     const payload = {"language": "Python", "code": code};
     console.log("Sending payload");
 
@@ -24,5 +40,5 @@ export const run_code = () => {
     req.send(JSON.stringify(payload));
 }
 
-const run_code_btn = <HTMLButtonElement>document.getElementById('run-code');
+const run_code_btn = <HTMLButtonElement>document.getElementById('execute');
 run_code_btn.addEventListener('click', run_code);
