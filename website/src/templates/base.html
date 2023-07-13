@@ -1,11 +1,23 @@
 <!DOCTYPE html>
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cssreset.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <h1>Kapi</h1>
-    <section class="content">
-        {% block content %}{% endblock %}
-    </section>
+    <header>
+        <h1>Kapi</h1>
+        <nav>
+            <a href="/code">Code</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="content">
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+
+    <footer>
+    </footer>
     <script src="{{ url_for('static', filename='js/bundled.js') }}"></script>
 </body>

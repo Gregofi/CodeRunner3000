@@ -16,6 +16,6 @@ WORKDIR /app/
 
 COPY --from=0 /rust/app/ ./
 
-EXPOSE 7000
+EXPOSE 7800
 
 CMD ["./target/release/evaluator"]

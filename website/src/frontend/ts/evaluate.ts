@@ -22,10 +22,10 @@ export function code_result(this: XMLHttpRequest) {
 
     const response = JSON.parse(this.responseText);
     console.log(`Received response: ${this.responseText}`);
-    const stdin = <HTMLTextAreaElement>document.getElementById("stdout")
-    stdin.value = response.stdout;
-    const stderr = <HTMLTextAreaElement>document.getElementById("stderr");
-    stderr.value = `exit code: ${response.exit_code}\n` + response.stderr;
+    const stdin = <HTMLDivElement>document.getElementById("stdout")
+    stdin.innerText = response.stdout;
+    const stderr = <HTMLDivElement>document.getElementById("stderr");
+    stderr.innerText = `exit code: ${response.exit_code}\n` + response.stderr;
 }
 
 export const run_code = () => {
