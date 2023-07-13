@@ -1,5 +1,25 @@
-.code {
+:root {
+    --code-area-height: 600px;
+}
+
+#code {
     width: 800px;
-    height: 600px;
+    height: var(--code-area-height);
     border: 1px solid #ccc;
+}
+
+.output {
+    height: calc(var(--code-area-height)/2);
+    width: 200px;
+    border: 1px solid black;
+    color: gray;
+}
+
+#code-view {
+    display: flex;
+}
+
+#output-view {
+    display: flex;
+    flex-direction: column;
 }

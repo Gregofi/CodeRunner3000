@@ -2,11 +2,15 @@
 
 {% block content %}
 Run your code here!
-<div id="code" style="width: 800px; height: 600px; border: 1px solid #ccc;"></div>
-<button id="execute">Run</button>
 
-<textarea id="stdout" rows="5" cols="33">
-</textarea>
-<textarea id="stderr" rows="5" cols="33">
-</textarea>
+<div id="code-view">
+
+    <div id="code"></div>
+
+    <div id="output-view">
+        <div class="output" id="stdout"></div>
+        <div class="output" id="stderr"></div>
+    </div>
+</div>
+<button id="execute">Run</button>
 {% endblock %}
