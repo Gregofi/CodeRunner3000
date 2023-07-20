@@ -1,19 +1,16 @@
 # ====== Frontend build ======
-FROM debian:bookworm
+FROM node:bullseye
 
-RUN apt-get update -y && \
-    apt-get install -y npm
-
-COPY src/frontend/ /www/frontend/
 WORKDIR /www/
+COPY src/frontend/ frontend/
 
-RUN cd frontend && npm install && npm run build
+RUN cd frontend && npm ci && npm run build
 
 
 # ====== Server runtime image ======
 FROM debian:bullseye
 
-RUN apt-get update -y && \
+RUN apt-get update && \
     apt-get install -y \
         python3 \
         python3-pip \
@@ -31,4 +28,4 @@ COPY /scripts/entrypoint.sh scripts/
 
 EXPOSE 80
 
-CMD ["/www/scripts/entrypoint.sh"]
+ENTRYPOINT ["/www/scripts/entrypoint.sh"]

@@ -1,12 +1,61 @@
+version: '3'
 services:
   web:
     build: website
     ports:
       - "80:80"
-    links:
-      - "evaluator:evaluator"
+    networks:
+      - code-exec-nw
 
   evaluator:
     build: evaluator
     ports:
       - "7800:7800"
+    depends_on:
+      dind:
+        condition: service_healthy
+    volumes:
+      - dind-certs-client:/certs/client
+      - code:/www/app/sources
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_HOST=tcp://docker:2376
+    networks:
+      - dind-nw
+      - code-exec-nw
+
+  dind:
+    build: dind
+    privileged: true
+    volumes:
+      - dind-certs-client:/certs/client
+      - dind-certs-ca:/certs/ca
+      - code:/www/app/sources
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    networks:
+      dind-nw:
+        aliases:
+          - docker
+    expose:
+#     - 2375 Do not expose the non TLS port
+      - 2376
+    healthcheck:
+      test: ["CMD", "docker", "info"]
+      interval: 3s
+      timeout: 5s
+      retries: 2
+      start_period: 1s
+
+volumes:
+  dind-certs-client:
+  dind-certs-ca:
+  # A volume where all the submitted source codes
+  # are located.
+  code:
+
+networks:
+  dind-nw:
+  code-exec-nw:

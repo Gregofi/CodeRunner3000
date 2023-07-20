@@ -8,14 +8,23 @@ RUN cargo build --release
 
 
 # ====== Runtime image ======
-FROM alpine:latest
+FROM docker:latest
 
-RUN apk --no-cache add ca-certificates musl-dev bash python3
+WORKDIR /www/app/
 
-WORKDIR /app/
+COPY --from=0 /rust/app/target/release/evaluator ./
 
-COPY --from=0 /rust/app/ ./
+RUN apk --no-cache add \
+    ca-certificates \
+    musl-dev \
+    bash \
+    openrc
+
+COPY images/ images/
+COPY ./scripts/entrypoint.sh ./
 
 EXPOSE 7800
 
-CMD ["./target/release/evaluator"]
+# Use CMD here so that the docker:cli entrypoint
+# is executed.
+CMD ["./entrypoint.sh"]

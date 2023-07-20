@@ -16,10 +16,27 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
 const TIMEOUT: &str = "5";
+const EVAL_FOLDER: &str = "eval_env";
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 enum Language {
-    Python,
+    Lua,
+}
+
+impl std::fmt::Display for Language {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Language::Lua => f.write_str("lua")
+        }
+    }
+}
+
+impl Language {
+    fn extension(&self) -> &str {
+        match self {
+            Language::Lua => "lua",
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -47,31 +64,36 @@ fn random_filename() -> String {
         .collect()
 }
 
-fn run_python(filename: &str) -> Result<ResponsePayload> {
-    println!("Running python3 command on file {}", filename);
-    let output = Command::new("timeout")
-        .arg(TIMEOUT)
-        .arg("python3")
-        .arg(filename)
+fn run_lua(folder: &str) -> Result<ResponsePayload> {
+    println!("Running lua5.1 command with folder ID {}", folder);
+    // The path to the sources must be inside the DIND container
+    // not this one!
+    println!("/www/app/sources/lua/{}", folder);
+    let exec = Command::new("docker")
+        .arg("run")
+        .arg("-v")
+        .arg(&format!("/www/app/sources/lua/{}:/{}", folder, EVAL_FOLDER))
+        .arg("lua-runtime")
+        .arg("lua5.1")
+        .arg("source.lua")
         .output()?;
 
-    let stderr = if output.status.code().is_none() {
+    let stdout =  str::from_utf8(&exec.stdout).unwrap().to_string();
+
+    // FIXME: This was valid when we just called timeout without the docker.
+    let stderr = if exec.status.code().is_none() {
         "The program timeouted".to_string()
     } else {
-        str::from_utf8(&output.stderr).unwrap().to_string()
+        str::from_utf8(&exec.stderr).unwrap().to_string()
     };
 
-    Ok(ResponsePayload {
-        stdout: str::from_utf8(&output.stdout).unwrap().to_string(),
-        stderr,
-        exit_code: output.status.code().unwrap_or(124),
-    })
-}
+    println!("Lua finished, container stdout: '{}', stderr: '{}'", stdout, stderr);
 
-fn get_extension(lang: &Language) -> &str {
-    match lang {
-        Language::Python => ".py",
-    }
+    Ok(ResponsePayload {
+        stdout,
+        stderr,
+        exit_code: exec.status.code().unwrap_or(124),
+    })
 }
 
 async fn handle_connection(sock: TcpStream) -> Result<()> {
@@ -86,15 +108,21 @@ async fn handle_connection(sock: TcpStream) -> Result<()> {
     let json = request.content.unwrap();
     let instructions: RequestPayload = serde_json::from_str(&json)?;
 
-    let filename = random_filename() + get_extension(&instructions.language);
-    let mut file = File::create(&filename)?;
+    let folder_name = random_filename();
+    let path_str = format!("/www/app/sources/{}/{}/source.{}", instructions.language.to_string(), folder_name, instructions.language.extension());
+    let path = std::path::Path::new(&path_str);
+    let prefix = path.parent().unwrap();
+    std::fs::create_dir_all(prefix).unwrap();
+
+    let mut file = File::create(&path)?;
     file.write_all(&instructions.code.as_bytes())?;
 
     let result = match instructions.language {
-        Language::Python => run_python(&filename),
+        Language::Lua => run_lua(&folder_name),
     }?;
 
-    fs::remove_file(filename)?;
+    // Keep the folders for now so that we can properly inspect errors
+ // fs::remove_dir_all(folder_name)?;
 
     let response_payload = serde_json::to_string(&result)?;
     
@@ -149,10 +177,10 @@ mod test {
     fn test_serialization() {
         assert!(parse_json("").is_err());
         assert!(parse_json("{}").is_err());
-        let res = parse_json(r#"{ "language": "Python", "code": "print()"}"#);
+        let res = parse_json(r#"{ "language": "Lua", "code": "print()"}"#);
         assert!(res.is_ok());
         let req = res.unwrap();
-        assert_eq!(req.language, Language::Python);
+        assert_eq!(req.language, Language::Lua);
         assert_eq!(req.code, "print()");
     }
 }

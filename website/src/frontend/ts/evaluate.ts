@@ -4,15 +4,16 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 const container = document.getElementById('code');
 const editor = monaco.editor.create(container!, {
     value: [
-        'def fact(n):',
-        '\tif n == 0:',
-        '\t\treturn 1',
-        '\telse:',
-        '\t\treturn n * fact(n - 1)',
+        'local function fact(n)',
+        '\tif n == 0 then return 1 end',
         '',
-        'print(fact(5))'
+        '\treturn n * fact(n - 1)',
+        'end',
+        '',
+        '',
+        'print(fact(5))\n',
     ].join('\n'),
-	language: 'python'
+	language: 'lua'
 });
 
 export function code_result(this: XMLHttpRequest) {
@@ -30,7 +31,7 @@ export function code_result(this: XMLHttpRequest) {
 
 export const run_code = () => {
     const code = editor.getValue();
-    const payload = {"language": "Python", "code": code};
+    const payload = {"language": "Lua", "code": code};
     console.log("Sending payload");
 
     const req = new XMLHttpRequest();
