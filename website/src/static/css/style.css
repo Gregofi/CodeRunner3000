@@ -3,14 +3,14 @@
 }
 
 #code {
-    width: 800px;
+    width: 900px;
     height: var(--code-area-height);
     border: 1px solid #ccc;
 }
 
 .output {
     height: calc(var(--code-area-height)/2);
-    width: 200px;
+    width: 300px;
     border: 1px solid black;
     color: gray;
 }
@@ -22,4 +22,43 @@
 #output-view {
     display: flex;
     flex-direction: column;
+}
+
+main {
+    display: flex;
+    justify-content: center;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    min-height: 50px;
+    border-bottom: 1px solid #f2f2f2;
+    padding: 0 15%;
+    margin-bottom: 50px;
+}
+
+header .webpage-name {
+    margin: 0 80px 0 10px;
+    font-size: 24px;
+}
+
+nav {
+    font-size: 20px;
+}
+
+nav a {
+    text-decoration: none;
+    color: gray;
+    margin: 0 18px;
+}
+
+article.main-article {
+    max-width: 900px;
+    margin: 0 15px;
+    text-align: justify;
+}
+
+article p {
+    font-size: 20px;
 }
