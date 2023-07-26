@@ -1,0 +1,9 @@
+FROM alpine
+
+RUN apk --no-cache add lua5.1
+
+RUN adduser -h /eval_env -D evaluator
+
+USER evaluator
+
+WORKDIR /eval_env
