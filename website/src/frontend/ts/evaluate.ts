@@ -26,7 +26,7 @@ export function code_result(this: XMLHttpRequest) {
     const stdin = <HTMLDivElement>document.getElementById("stdout")
     stdin.innerText = response.stdout;
     const stderr = <HTMLDivElement>document.getElementById("stderr");
-    stderr.innerText = `exit code: ${response.exit_code}\n` + response.stderr;
+    stderr.innerText = response.stderr;
 }
 
 export const run_code = () => {

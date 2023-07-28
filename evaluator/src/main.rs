@@ -17,6 +17,9 @@ use tokio::net::{TcpListener, TcpStream};
 
 const TIMEOUT: &str = "5";
 const EVAL_FOLDER: &str = "eval_env";
+const MEMORY_LIMIT_MB: usize = 128;
+const CPUS_LIMIT: f64 = 0.25;
+const PIDS_LIMIT: usize = 32;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 enum Language {
@@ -49,7 +52,6 @@ struct RequestPayload {
 struct ResponsePayload {
     stdout: String,
     stderr: String,
-    exit_code: i32,
 }
 
 fn create_error(err: &str) -> Error {
@@ -66,33 +68,31 @@ fn random_filename() -> String {
 
 fn run_lua(folder: &str) -> Result<ResponsePayload> {
     println!("Running lua5.1 command with folder ID {}", folder);
-    // The path to the sources must be inside the DIND container
+    // The path to the sources must be inside the DIND container,
     // not this one!
     println!("/www/app/sources/lua/{}", folder);
     let exec = Command::new("docker")
         .arg("run")
         .arg("-v")
         .arg(&format!("/www/app/sources/lua/{}:/{}", folder, EVAL_FOLDER))
+        .arg(&format!("--memory={}m", MEMORY_LIMIT_MB))
+        .arg(&format!("--cpus={}", CPUS_LIMIT))
+        .arg(&format!("--pids-limit={}", PIDS_LIMIT))
         .arg("lua-runtime")
-        .arg("lua5.1")
-        .arg("source.lua")
+        .arg("/usr/bin/evaluate.sh")
         .output()?;
 
     let stdout =  str::from_utf8(&exec.stdout).unwrap().to_string();
-
-    // FIXME: This was valid when we just called timeout without the docker.
-    let stderr = if exec.status.code().is_none() {
-        "The program timeouted".to_string()
-    } else {
-        str::from_utf8(&exec.stderr).unwrap().to_string()
-    };
+    let stderr = str::from_utf8(&exec.stderr).unwrap().to_string();
 
     println!("Lua finished, container stdout: '{}', stderr: '{}'", stdout, stderr);
 
+    let program_stdout = fs::read_to_string(format!("/www/app/sources/lua/{}/stdout.txt", folder)).expect("Unable to read stdout");
+    let program_stderr = fs::read_to_string(format!("/www/app/sources/lua/{}/stderr.txt", folder)).expect("Unable to read stdout");
+
     Ok(ResponsePayload {
-        stdout,
-        stderr,
-        exit_code: exec.status.code().unwrap_or(124),
+        stdout: program_stdout,
+        stderr: program_stderr,
     })
 }
 
