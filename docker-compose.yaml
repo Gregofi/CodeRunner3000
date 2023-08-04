@@ -6,6 +6,7 @@ services:
       - "80:80"
     networks:
       - code-exec-nw
+      - db-network
 
   evaluator:
     build: evaluator
@@ -49,6 +50,23 @@ services:
       retries: 2
       start_period: 1s
 
+  db:
+    build: db
+    restart: always
+    environment:
+      # TODO: This must obviously go to hell
+      POSTGRES_PASSWORD: example
+    networks:
+      - db-network
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - db-network
+
 volumes:
   dind-certs-client:
   dind-certs-ca:
@@ -59,3 +77,4 @@ volumes:
 networks:
   dind-nw:
   code-exec-nw:
+  db-network:

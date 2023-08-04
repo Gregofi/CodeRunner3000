@@ -15,7 +15,7 @@ RUN apt-get update && \
         python3 \
         python3-pip \
         nginx && \
-    pip install flask requests
+    pip install flask requests SQLAlchemy
 
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 
