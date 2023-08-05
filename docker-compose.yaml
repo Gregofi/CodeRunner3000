@@ -2,11 +2,16 @@ version: '3'
 services:
   web:
     build: website
+    environment:
+      - DB_URI=postgresql://postgres:example_password@db:5432/postgres
     ports:
       - "80:80"
     networks:
       - code-exec-nw
       - db-network
+    depends_on:
+      db:
+        condition: service_healthy
 
   evaluator:
     build: evaluator
@@ -55,9 +60,17 @@ services:
     restart: always
     environment:
       # TODO: This must obviously go to hell
-      POSTGRES_PASSWORD: example
+      POSTGRES_PASSWORD: example_password
+    ports:
+      - 5432:5432
     networks:
       - db-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 5s
+      retries: 2
+      start_period: 4s
 
   adminer:
     image: adminer

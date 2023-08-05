@@ -24,7 +24,7 @@ module.exports = {
         extensions: ['.ts' ,'.js']
     },
     output: {
-        filename: 'bundled.js',
+        filename: 'editor-bundled.js',
         path: path.resolve(__dirname, '../static/js'),
     },
     plugins: [
