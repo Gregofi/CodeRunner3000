@@ -2,9 +2,9 @@
 FROM node:bullseye
 
 WORKDIR /www/
-COPY src/frontend/ frontend/
+COPY src/editor-frontend/ editor-frontend/
 
-RUN cd frontend && npm ci && npm run build
+RUN cd editor-frontend && npm ci && npm run build
 
 
 # ====== Server runtime image ======
@@ -15,7 +15,13 @@ RUN apt-get update && \
         python3 \
         python3-pip \
         nginx && \
-    pip install flask requests SQLAlchemy
+    pip install \
+        flask \
+        requests \
+        Flask-SQLAlchemy \
+        psycopg2-binary \
+        pyjwt \
+        wtforms
 
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 
