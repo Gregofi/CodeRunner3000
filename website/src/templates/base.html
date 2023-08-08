@@ -20,6 +20,14 @@
         </section>
     </main>
 
+    <ul class="flash-messages">
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        {% endwith %}
+    </ul>
+
     <footer>
     </footer>
 </body>
