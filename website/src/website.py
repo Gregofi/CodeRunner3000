@@ -7,13 +7,13 @@ from flask import Flask
 from flask import request
 from flask import url_for
 from flask import redirect
-from flask import session
+from flask import abort
 from flask import flash
 from flask import make_response
 from werkzeug.security import generate_password_hash, gen_salt, check_password_hash
 # The flask command unfortunately runs the app one folder above.
 from models import db, User, Article, Category
-from forms import LoginForm
+from forms import LoginForm, ArticleForm
 from auth import admin, JWT_SECRET, JWT_COOKIE
 
 from markupsafe import escape
@@ -61,17 +61,20 @@ with app.app_context():
 
 
 # TODO: Temporary admin user
-def create_test_admin():
+def create_test_db():
     salt = gen_salt(32)
     hashed_password = generate_password_hash(salt + "password", method='sha256')
     new_user = User(username='admin', password=hashed_password,
                     salt=salt, email='filip.gregor98@gmail.com', is_admin=1)
     db.session.add(new_user)
+
+    new_category = Category(name='Programming')
+    db.session.add(new_category)
     db.session.commit()
 
 
 with app.app_context():
-    create_test_admin()
+    create_test_db()
 
 
 # Nginx fix
@@ -95,9 +98,27 @@ def blog_all():
     return render_template("website/blog_all.html")
 
 
+@app.route("/blog/new", methods=["GET", "POST"])
+@admin
+def blog_new():
+    form = ArticleForm(request.form)
+    if request.method == "POST" and form.validate():
+        article = Article(heading=form.heading.data,
+                          slug=form.slug.data,
+                          text=form.text.data)
+        db.session.add(article)
+        db.session.commit()
+        return redirect(f"/blog/{form.slug.data}")
+    else:
+        return render_template('website/new_blog.html', form=form)
+
+
 @app.route("/blog/<string:slug>")
 def blog_view(slug: str):
-    return render_template("website/blog.html", article_slug=escape(slug))
+    article = Article.query.filter_by(slug=slug).first()
+    if article is None:
+        return abort(404)
+    return render_template("website/blog.html", article=article)
 
 
 @app.route("/admin")

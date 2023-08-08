@@ -22,7 +22,7 @@ def get_user(jwt_token: str) -> Optional[str]:
 
 
 def admin(func):
-    def check_admin():
+    def wrapper(*args, **kwargs):
         cookie_jwt = request.cookies.get(JWT_COOKIE)
         if cookie_jwt is None:
             return abort(401)
@@ -37,8 +37,8 @@ def admin(func):
             return abort(401)
 
         if user.is_admin == 1:
-            return func()
+            return func(*args, **kwargs)
         else:
             return abort(401)
-
-    return check_admin
+    wrapper.__name__ = func.__name__
+    return wrapper
