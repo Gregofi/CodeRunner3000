@@ -3,6 +3,8 @@
 {% block content %}
 
 <article class="main-article">
-    <p>Showing article {{ article_slug }}</p>
+    <h1>{{ article.heading }}</h1>
+
+    {{ article.text }}
 </article>
 {% endblock %}
