@@ -1,5 +1,5 @@
 import os
-from secrets import token_bytes
+from secrets import token_hex
 
 from flask import Blueprint
 from flask import render_template
@@ -14,6 +14,7 @@ from werkzeug.security import generate_password_hash, gen_salt, check_password_h
 # The flask command unfortunately runs the app one folder above.
 from models import db, User, Article, Category
 from forms import LoginForm
+from auth import admin, JWT_SECRET, JWT_COOKIE
 
 from markupsafe import escape
 
@@ -23,9 +24,6 @@ import jwt
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from logging.config import dictConfig
-
-JWT_SECRET = "8b079abb051d6b45dc23dc39acffc6d8688da240fbd8a7a7437966c36426d1a8"
-JWT_COOKIE = "session"
 
 dictConfig({
     'version': 1,
@@ -47,6 +45,8 @@ bp = Blueprint("website", __name__)
 
 app = Flask(__name__)
 
+app.secret_key = token_hex(64)
+
 # Database initialization and loading models
 db_uri = os.getenv("DB_URI")
 if db_uri is None:
@@ -59,6 +59,7 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+
 # TODO: Temporary admin user
 def create_test_admin():
     salt = gen_salt(32)
@@ -67,6 +68,8 @@ def create_test_admin():
                     salt=salt, email='filip.gregor98@gmail.com', is_admin=1)
     db.session.add(new_user)
     db.session.commit()
+
+
 with app.app_context():
     create_test_admin()
 
@@ -75,14 +78,6 @@ with app.app_context():
 app.wsgi_app = ProxyFix(
     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
 )
-
-
-def authenticated(cont):
-    def check(*args, **kwargs):
-        if session['session_token']:
-            cont(*args, **kwargs)
-        else:
-            raise
 
 
 @app.route("/")
@@ -106,6 +101,7 @@ def blog_view(slug: str):
 
 
 @app.route("/admin")
+@admin
 def admin_view():
     return "Not implemented"
 
@@ -121,8 +117,9 @@ def auth():
         user = User.query.filter_by(username=form.username.data).first()
         if user is None or not verify_password(user, form.password.data):
             flash("Failed to login, check your username and password")
-            return redirect(url_for('/auth'))
+            return redirect(url_for('auth'))
 
+        # TODO: Move to the auth module
         jwt_token = jwt.encode({"username": user.username},
                                JWT_SECRET, algorithm="HS256")
         response = make_response(redirect(url_for('index')))
