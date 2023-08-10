@@ -121,6 +121,7 @@ async fn handle_connection(sock: TcpStream) -> Result<()> {
     }
 
     let json = request.content.unwrap();
+    println!("Payload received: {}", json);
     let instructions: RequestPayload = serde_json::from_str(&json)?;
 
     let folder_name = random_filename();

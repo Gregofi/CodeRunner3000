@@ -1,0 +1,66 @@
+version: '3'
+services:
+  evaluator:
+    build: ../evaluator
+    ports:
+      - "7800:7800"
+    depends_on:
+      dind:
+        condition: service_healthy
+    volumes:
+      - dind-certs-client:/certs/client
+      - code:/www/app/sources
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_HOST=tcp://docker:2376
+    networks:
+      - dind-nw
+      - code-exec-nw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "localhost:7800/liveness"]
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 1s
+
+  dind:
+    build: ../dind
+    privileged: true
+    volumes:
+      - dind-certs-client:/certs/client
+      - dind-certs-ca:/certs/ca
+      - code:/www/app/sources
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    networks:
+      dind-nw:
+        aliases:
+          - docker
+    expose:
+#     - 2375 Do not expose the non TLS port
+      - 2376
+    healthcheck:
+      test: ["CMD", "docker", "info"]
+      interval: 3s
+      timeout: 5s
+      retries: 2
+      start_period: 1s
+
+  test:
+    build: evaluator_tests
+    depends_on:
+      evaluator:
+        condition: service_healthy
+    networks:
+      - code-exec-nw
+
+volumes:
+  dind-certs-client:
+  dind-certs-ca:
+  code:
+
+networks:
+  dind-nw:
+  code-exec-nw:

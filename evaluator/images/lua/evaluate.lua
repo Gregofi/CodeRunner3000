@@ -4,10 +4,10 @@ if arg[1] == nil then
     return
 end
 
-local users_code = loadfile(arg[1])
+local users_code, err = loadfile(arg[1])
 
 if users_code == nil then
-    io.stderr:write("Unable to load users code at path " .. arg[1])
+    io.stderr:write(err)
     return
 end
 
