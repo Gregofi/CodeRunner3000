@@ -1,0 +1,17 @@
+name: integration_tests
+
+on: [push, pull_request]
+
+jobs:
+  evaluator_integration_tests:
+    name: Evaluator + Dind integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: dc build and test
+        run: |
+          cd ${{ github.workspace }}/integration_tests
+          docker compose -f docker-compose-evaluator.yml build
+          docker compose -f docker-compose-evaluator.yml run test
+          docker compose -f docker-compose-evaluator.yml down
