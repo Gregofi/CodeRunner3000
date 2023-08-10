@@ -18,7 +18,8 @@ RUN apk --no-cache add \
     ca-certificates \
     musl-dev \
     bash \
-    openrc
+    openrc \
+    curl # for healthcheck TODO: Maybe a better utility to do this
 
 COPY images/ images/
 COPY ./scripts/entrypoint.sh ./
