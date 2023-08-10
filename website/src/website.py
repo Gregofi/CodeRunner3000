@@ -151,8 +151,9 @@ def auth():
 
 
 @app.route("/run-code", methods=["POST"])
-def run_python():
+def run_code():
     code = request.json
+    app.logger.info(code)
     app.logger.info("Received request for compilation, sending to server")
     response = requests.post("http://evaluator:7800/run", json=code)
     json = response.json()
