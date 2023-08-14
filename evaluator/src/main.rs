@@ -20,6 +20,7 @@ const EVAL_FOLDER: &str = "eval_env";
 const MEMORY_LIMIT_MB: usize = 128;
 const CPUS_LIMIT: f64 = 0.25;
 const PIDS_LIMIT: usize = 32;
+const MAX_STRING_OUTPUT_LENGTH: usize = 10000;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 enum Language {
@@ -91,8 +92,8 @@ fn run_lua(folder: &str) -> Result<ResponsePayload> {
     let program_stderr = fs::read_to_string(format!("/www/app/sources/lua/{}/stderr.txt", folder)).expect("Unable to read stdout");
 
     Ok(ResponsePayload {
-        stdout: program_stdout,
-        stderr: program_stderr,
+        stdout: program_stdout[..std::cmp::min(MAX_STRING_OUTPUT_LENGTH, program_stdout.len())].to_string(),
+        stderr: program_stderr[..std::cmp::min(MAX_STRING_OUTPUT_LENGTH, program_stderr.len())].to_string(),
     })
 }
 

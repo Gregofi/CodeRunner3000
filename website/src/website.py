@@ -16,8 +16,6 @@ from models import db, User, Article, Category
 from forms import LoginForm, ArticleForm
 from auth import admin, JWT_SECRET, JWT_COOKIE
 
-from markupsafe import escape
-
 import requests
 import jwt
 
@@ -64,6 +62,9 @@ with app.app_context():
 def create_test_db():
     salt = gen_salt(32)
     hashed_password = generate_password_hash(salt + "password", method='sha256')
+
+    if User.query.filter_by(username='admin').first() is not None:
+        return
     new_user = User(username='admin', password=hashed_password,
                     salt=salt, email='filip.gregor98@gmail.com', is_admin=1)
     db.session.add(new_user)

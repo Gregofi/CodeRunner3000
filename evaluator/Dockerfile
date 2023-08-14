@@ -3,7 +3,9 @@ FROM rust:alpine
 
 RUN apk --no-cache add ca-certificates musl-dev
 WORKDIR /rust/app/
-COPY . .
+COPY src/ src/
+COPY Cargo.lock .
+COPY Cargo.toml .
 RUN cargo build --release
 
 
