@@ -13,6 +13,7 @@
     width: 300px;
     border: 1px solid black;
     color: gray;
+    overflow: auto;
 }
 
 #code-view {

@@ -34,7 +34,6 @@ print(fact(0))
     response = requests.post(EVALUATOR_ADDRESS, json=payload)
     assert response.status_code == 200
     values = response.json()
-    print(values)
     assert values["stdout"] == '120\n1\n'
     assert values["stderr"] == ''
 
@@ -47,7 +46,6 @@ print(x())
     response = requests.post(EVALUATOR_ADDRESS, json=payload)
     assert response.status_code == 200
     values = response.json()
-    print(values)
     assert values["stdout"] == ''
     assert values["stderr"] == 'source.lua:2: attempt to call global \'x\' (a nil value)'
 
@@ -61,6 +59,17 @@ print(fact(5))
     response = requests.post(EVALUATOR_ADDRESS, json=payload)
     assert response.status_code == 200
     values = response.json()
-    print(values)
     assert values["stdout"] == ''
     assert values["stderr"] == "source.lua:2: '=' expected near 'fact'"
+
+
+def test_eval_timeout1():
+    code = """
+while 1 < 2 do end
+"""
+    payload = generate_lua(code)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    assert response.status_code == 200
+    values = response.json()
+    assert values["stdout"] == ''
+    assert values["stderr"] == "The program timeouted\n"
