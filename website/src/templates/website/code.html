@@ -1,7 +1,10 @@
 {% extends 'base.html' %}
 
+{% block page_h1 %}
+<h1>Run Lua Online</h1>
+{% endblock %}
+
 {% block content %}
-Run your code here!
 
 <div id="code-view">
 
@@ -11,7 +14,7 @@ Run your code here!
         <div class="output" id="stdout"></div>
         <div class="output" id="stderr"></div>
     </div>
+    <button id="execute">Run</button>
 </div>
-<button id="execute">Run</button>
 <script src="{{ url_for('static', filename='js/editor-bundled.js') }}"></script>
 {% endblock %}

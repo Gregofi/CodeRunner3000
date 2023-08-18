@@ -4,30 +4,28 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <header>
-        <span class="webpage-name">Filip Gregor's website</span>
-        <nav>
-            <a href="/code">Code</a>
-            <a href="/blog">Blog</a>
-            <a href="/gadgets">Gadgets</a>
-            <a href="/cv">CV</a>
-        </nav>
-    </header>
+    <div class="box">
+        <header>
+            <span class="webpage-name">Code Runner 3000</span>
+            <div class="page-h1">{% block page_h1 %}{% endblock %}</div>
+            <nav>
+                <a href="/code">Code runner</a>
+                <a href="/gadgets">Gadgets</a>
+            </nav>
+        </header>
 
-    <main>
-        <section class="content">
-            {% block content %}{% endblock %}
-        </section>
-    </main>
+        <main>
+            <section class="content">
+                {% block content %}{% endblock %}
+            </section>
+        </main>
 
-    <ul class="flash-messages">
-        {% with messages = get_flashed_messages() %}
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-        {% endwith %}
-    </ul>
-
-    <footer>
-    </footer>
+        <ul class="flash-messages">
+            {% with messages = get_flashed_messages() %}
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            {% endwith %}
+        </ul>
+    </div>
 </body>
