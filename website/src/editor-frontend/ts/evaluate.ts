@@ -13,7 +13,8 @@ const editor = monaco.editor.create(container!, {
         '',
         'print(fact(5))\n',
     ].join('\n'),
-	language: 'lua'
+	language: 'lua',
+  automaticLayout: false,
 });
 
 export function code_result(this: XMLHttpRequest) {
@@ -43,3 +44,19 @@ export const run_code = () => {
 
 const run_code_btn = <HTMLButtonElement>document.getElementById('execute');
 run_code_btn.addEventListener('click', run_code);
+
+// Resize the editor
+// Preferably, we would like to use the
+// 'automaticLayout' config option in the editor,
+// but it only works when making the view bigger,
+// not when shrinking it.
+window.addEventListener("resize", function() {
+    // make editor as small as possible
+    editor.layout({ width: 0, height: 0 })
+
+    // Resize when the frame refreshes
+    window.requestAnimationFrame(() => {
+        const parent = document.getElementById('code');
+        editor.layout(parent?.getBoundingClientRect());
+    });
+});

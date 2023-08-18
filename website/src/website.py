@@ -11,10 +11,6 @@ from flask import abort
 from flask import flash
 from flask import make_response
 from werkzeug.security import generate_password_hash, gen_salt, check_password_hash
-# The flask command unfortunately runs the app one folder above.
-from models import db, User, Article, Category
-from forms import LoginForm, ArticleForm
-from auth import admin, JWT_SECRET, JWT_COOKIE
 
 import requests
 import jwt
@@ -43,40 +39,8 @@ bp = Blueprint("website", __name__)
 
 app = Flask(__name__)
 
+# TODO
 app.secret_key = token_hex(64)
-
-# Database initialization and loading models
-db_uri = os.getenv("DB_URI")
-if db_uri is None:
-    print("DB_URI env variable not set")
-    exit(1)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
-
-db.init_app(app)
-with app.app_context():
-    db.create_all()
-
-
-# TODO: Temporary admin user
-def create_test_db():
-    salt = gen_salt(32)
-    hashed_password = generate_password_hash(salt + "password", method='sha256')
-
-    if User.query.filter_by(username='admin').first() is not None:
-        return
-    new_user = User(username='admin', password=hashed_password,
-                    salt=salt, email='filip.gregor98@gmail.com', is_admin=1)
-    db.session.add(new_user)
-
-    new_category = Category(name='Programming')
-    db.session.add(new_category)
-    db.session.commit()
-
-
-with app.app_context():
-    create_test_db()
-
 
 # Nginx fix
 app.wsgi_app = ProxyFix(
@@ -86,69 +50,12 @@ app.wsgi_app = ProxyFix(
 
 @app.route("/")
 def index():
-    return render_template("website/index.html")
+    return render_template("website/code.html")
 
 
 @app.route("/code")
 def python_interpreter():
     return render_template("website/code.html")
-
-
-@app.route("/blog")
-def blog_all():
-    return render_template("website/blog_all.html")
-
-
-@app.route("/blog/new", methods=["GET", "POST"])
-@admin
-def blog_new():
-    form = ArticleForm(request.form)
-    if request.method == "POST" and form.validate():
-        article = Article(heading=form.heading.data,
-                          slug=form.slug.data,
-                          text=form.text.data)
-        db.session.add(article)
-        db.session.commit()
-        return redirect(f"/blog/{form.slug.data}")
-    else:
-        return render_template('website/new_blog.html', form=form)
-
-
-@app.route("/blog/<string:slug>")
-def blog_view(slug: str):
-    article = Article.query.filter_by(slug=slug).first()
-    if article is None:
-        return abort(404)
-    return render_template("website/blog.html", article=article)
-
-
-@app.route("/admin")
-@admin
-def admin_view():
-    return "Not implemented"
-
-
-def verify_password(user: User, password: str) -> bool:
-    return check_password_hash(user.password, user.salt + password)
-
-
-@app.route("/auth", methods=["GET", "POST"])
-def auth():
-    form = LoginForm(request.form)
-    if request.method == "POST" and form.validate():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user is None or not verify_password(user, form.password.data):
-            flash("Failed to login, check your username and password")
-            return redirect(url_for('auth'))
-
-        # TODO: Move to the auth module
-        jwt_token = jwt.encode({"username": user.username},
-                               JWT_SECRET, algorithm="HS256")
-        response = make_response(redirect(url_for('index')))
-        response.set_cookie(JWT_COOKIE, jwt_token, httponly=True)
-        return response
-    else:
-        return render_template("website/login.html", form=form)
 
 
 @app.route("/run-code", methods=["POST"])
