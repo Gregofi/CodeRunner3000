@@ -73,3 +73,50 @@ while 1 < 2 do end
     values = response.json()
     assert values["stdout"] == ''
     assert values["stderr"] == "The program timeouted\n"
+
+
+def test_forbidden_functions():
+    code = """
+print(os.execute("reboot"))
+"""
+    payload = generate_lua(code)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    assert response.status_code == 200
+    values = response.json()
+    assert values["stdout"] == ''
+    assert values["stderr"] == "source.lua:2: attempt to call field 'execute' (a nil value)"
+
+    code = """
+local http = require("socket.http")
+local response = http.request("http://google.com")
+"""
+    payload = generate_lua(code)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    assert response.status_code == 200
+    values = response.json()
+    assert values["stdout"] == ''
+    assert values["stderr"] == "source.lua:2: attempt to call global 'require' (a nil value)"
+
+
+def test_files():
+    code = """
+local file, err = io.open("/etc/shadow", "r")
+print(err)
+"""
+    payload = generate_lua(code)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    assert response.status_code == 200
+    values = response.json()
+    assert values["stdout"] == '/etc/shadow: Permission denied\n'
+    assert values["stderr"] == ''
+
+    code = """
+local file, err = io.open("foo.txt", "w")
+print(err)
+"""
+    payload = generate_lua(code)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    assert response.status_code == 200
+    values = response.json()
+    assert values["stdout"] == 'foo.txt: Permission denied\n'
+    assert values["stderr"] == ''
