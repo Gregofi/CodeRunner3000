@@ -19,17 +19,24 @@ const editor = monaco.editor.create(container!, {
   automaticLayout: false,
 });
 
-export function code_result(this: XMLHttpRequest) {
-    if (this.readyState !== this.DONE || this.status !== 200) {
-        return;
-    }
+// The number of the last request to the server for code execution. If the response that arrives from the code server has smaller id then this, it means that another request was send after this one. This is used to prevent slower code executed earlier rewriting result from faster code executed later.
+let last_req_id = 0;
 
-    const response = JSON.parse(this.responseText);
-    console.log(`Received response: ${this.responseText}`);
-    const stdin = <HTMLDivElement>document.getElementById("stdout")
-    stdin.innerText = response.stdout;
-    const stderr = <HTMLDivElement>document.getElementById("stderr");
-    stderr.innerText = response.stderr;
+function code_result(request_id: number) {
+    return function(this: XMLHttpRequest) {
+        if (this.readyState !== this.DONE
+          || this.status !== 200
+          || last_req_id !== request_id) {
+            return;
+        }
+
+        const response = JSON.parse(this.responseText);
+        console.log(`Received response: ${this.responseText}`);
+        const stdin = <HTMLDivElement>document.getElementById("stdout")
+        stdin.innerText = response.stdout;
+        const stderr = <HTMLDivElement>document.getElementById("stderr");
+        stderr.innerText = response.stderr;
+    }
 }
 
 export const run_code = () => {
@@ -38,7 +45,7 @@ export const run_code = () => {
     console.log("Sending payload");
 
     const req = new XMLHttpRequest();
-    req.addEventListener("load", code_result);
+    req.addEventListener("load", code_result(++last_req_id));
     req.open("POST", "/run-code", true);
     req.setRequestHeader('Content-Type', 'application/json');
     req.send(JSON.stringify(payload));
