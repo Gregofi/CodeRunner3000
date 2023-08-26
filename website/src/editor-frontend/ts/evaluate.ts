@@ -1,6 +1,8 @@
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 // The editor
 
+const EXECUTION_INTERVAL = 1000;
+
 const container = document.getElementById('code');
 const editor = monaco.editor.create(container!, {
     value: [
@@ -42,8 +44,29 @@ export const run_code = () => {
     req.send(JSON.stringify(payload));
 }
 
-const run_code_btn = <HTMLButtonElement>document.getElementById('execute');
-run_code_btn.addEventListener('click', run_code);
+// We want to run the code when user stops typing.
+// However, we want to run the code only once when
+// users stops typing.
+//
+// We use two variables to achieve this:
+// code_changed is set to true if the code changed
+// in the last x seconds.
+let code_changed = true;
+let previous_code = editor.getValue();
+
+setInterval(() => {
+    console.log("Checking for changes");
+    const current_code = editor.getValue();
+    if (current_code === previous_code && code_changed) {
+        console.log("Running code");
+        run_code();
+        code_changed = false;
+    } else if (current_code !== previous_code) {
+        console.log("Code changed");
+        code_changed = true;
+    }
+    previous_code = current_code;
+}, EXECUTION_INTERVAL);
 
 // Resize the editor
 // Preferably, we would like to use the
