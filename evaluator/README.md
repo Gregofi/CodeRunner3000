@@ -1,34 +1,33 @@
 # Evaluator
 ## Security
-Since we are running potentially malicious code in our service, we must take
-the necessary measurements to prevent from invading our system.
+
+Since the code can be potentially malicious, a necessary measurements must be
+taken to prevent the code from destroying our environment.
 ### Docker
 #### CPU and Memory
-We will run the program in a docker container which has limited resources
-available. A new container will be spawned each time the program is run. We can
-use the `--pids-limit` flag to prevent a fork bomb like attack. Next, the
-`--cpuset-cpus` to limit the CPU cores the program will be able to use
-(probably set it to one) and the `--cpu-shares` to make the container have less
-of a priority in case other containers needs the computing power (like the
-flask app). We must also limit the RAM memory, which is done simply via
-`--memory`.
+The program is run with limited resources. A new container is spawned for every
+program run with at least the following:
+- `--pids-limit` - Limits the processes the container can spawn. The evaluator
+should prevent from spawning new pids (for example `os.execute` is forbidden to
+be used in the container), but in case the code find a way around it this acts like
+a failsafe.
+- `--cpuset-cpus` - Limits the cores the program can use.
+- `--cpu-shares` - Lowers the priority of the container.
+- `--memory` - RAM memory limit.
 
 #### Filesystem
-The application shouldn't be able to get out of the docker container. But just
-in case, we will try to limit its access to the filesystem. We will use
-`chroot` in the container to limit it to only certain tools and folders. Of
-course, the program will be run with a user with as low priviledges as
-possible. The docker file will also have restricted access to the internet.
+- The code is run in a container as unprivileged user.
+- TODO: Limit users access to the internet.
 
 ### Language specific
-#### Lua
-Since Lua is a dynamic language, we can redefine its imports. We will be mainly
-interested in commands line `popen`, file manipulations, require and so on.
+Each language configuration must be done from ground up. The code runs in a docker container
+for which Dockerfile must be provided. The evaluation is then left up to the configuration.
+The source is often put into `/www/app/sources/<language>/<hash>`, which should be mounted
+into the container. The evaluator then expects the output to be in the same folder under the
+name `stdout.txt` and `stderr.txt`.
+
+#### Dynamic Languages
+In dynamic languages, we can freely redefine the code we want to forbid. For example
 ```lua
-require, os = function() print("Require is forbidden") end, nil
-...
+require = nil
 ```
-This has one unfortunate sideeffects, users errors will have invalid line
-numbers when some errors happen. We could just require their code from some
-main, which would make backtraces probably a little confusing but still better
-than shifted lines.
