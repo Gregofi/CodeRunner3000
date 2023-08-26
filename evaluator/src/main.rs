@@ -74,6 +74,8 @@ fn run_lua(folder: &str) -> Result<ResponsePayload> {
     println!("/www/app/sources/lua/{}", folder);
     let exec = Command::new("docker")
         .arg("run")
+        .arg("--network")
+        .arg("none")
         .arg("-v")
         .arg(&format!("/www/app/sources/lua/{}:/{}", folder, EVAL_FOLDER))
         .arg(&format!("--memory={}m", MEMORY_LIMIT_MB))
