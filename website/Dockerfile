@@ -18,10 +18,7 @@ RUN apt-get update && \
     pip install \
         flask \
         requests \
-        Flask-SQLAlchemy \
-        psycopg2-binary \
-        pyjwt \
-        wtforms
+        gunicorn
 
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 

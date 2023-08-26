@@ -1,19 +1,11 @@
-import os
 from secrets import token_hex
 
 from flask import Blueprint
 from flask import render_template
 from flask import Flask
 from flask import request
-from flask import url_for
-from flask import redirect
-from flask import abort
-from flask import flash
-from flask import make_response
-from werkzeug.security import generate_password_hash, gen_salt, check_password_hash
 
 import requests
-import jwt
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
