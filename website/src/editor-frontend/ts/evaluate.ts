@@ -15,8 +15,8 @@ const editor = monaco.editor.create(container!, {
         '',
         'print(fact(5))\n',
     ].join('\n'),
-	language: 'lua',
-  automaticLayout: false,
+    language: 'lua',
+    automaticLayout: false,
 });
 
 // The number of the last request to the server for code execution. If the response that arrives from the code server has smaller id then this, it means that another request was send after this one. This is used to prevent slower code executed earlier rewriting result from faster code executed later.
@@ -32,11 +32,20 @@ function code_result(request_id: number) {
 
         const response = JSON.parse(this.responseText);
         console.log(`Received response: ${this.responseText}`);
-        const stdin = <HTMLDivElement>document.getElementById("stdout")
+        switch_loading(false);
+        const stdin = <HTMLDivElement>document.querySelector("#stdout > .output-text")
         stdin.innerText = response.stdout;
-        const stderr = <HTMLDivElement>document.getElementById("stderr");
+        const stderr = <HTMLDivElement>document.querySelector("#stderr > .output-text");
         stderr.innerText = response.stderr;
     }
+}
+
+export const switch_loading = (loading: boolean) => {
+    const loaders = document.querySelectorAll(".code-loader");
+    loaders.forEach(loader => loader.classList.toggle("hidden", !loading));
+    
+    const outputs = document.querySelectorAll(".output");
+    outputs.forEach(output => output.classList.toggle("loading", loading));
 }
 
 export const run_code = () => {
@@ -49,6 +58,7 @@ export const run_code = () => {
     req.open("POST", "/run-code", true);
     req.setRequestHeader('Content-Type', 'application/json');
     req.send(JSON.stringify(payload));
+    switch_loading(true);
 }
 
 // We want to run the code when user stops typing.

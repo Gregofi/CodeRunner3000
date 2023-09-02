@@ -76,6 +76,8 @@ main {
     /* Needed to force vertical overflow in child */
     max-height: 100%;
     overflow: auto;
+    /* So that child loader works */
+    position: relative;
 }
 
 .flex-col {
@@ -85,4 +87,31 @@ main {
 
 footer {
     flex: 0 1 40px;
+}
+
+.spinner {
+    height:50px;
+    width:50px;
+    border-radius:50%;
+    border:8px solid;
+    border-color:#E4E4ED;
+    border-right-color: #808080;
+    animation:s2 1s infinite linear;
+}
+
+@keyframes s2 {to{transform: rotate(1turn)}}
+
+.loading {
+    background-color: #e3e3e3;
+}
+
+.code-loader {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.hidden {
+    display: none
 }
