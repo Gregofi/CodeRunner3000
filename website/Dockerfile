@@ -10,15 +10,18 @@ RUN cd editor-frontend && npm ci && npm run build
 # ====== Server runtime image ======
 FROM debian:bookworm
 
+ENV WEBSITE_PORT=3113
+
 RUN apt-get update && \
     apt-get install -y \
         python3 \
         python3-flask \
         python3-requests \
         nginx \
-        gunicorn
+        gunicorn \
+        gettext-base
 
-COPY conf/nginx.conf /etc/nginx/nginx.conf
+COPY conf/nginx.conf.template /etc/nginx/nginx.conf.template
 
 WORKDIR /www
 
@@ -27,6 +30,6 @@ COPY /src .
 COPY --from=0 /www/static/ static/
 COPY /scripts/entrypoint.sh scripts/
 
-EXPOSE 80
+EXPOSE ${WEBSITE_PORT}
 
 ENTRYPOINT ["/www/scripts/entrypoint.sh"]

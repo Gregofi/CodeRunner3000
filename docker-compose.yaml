@@ -3,7 +3,7 @@ services:
   web:
     build: website
     environment:
-      - DB_URI=postgresql://postgres:example_password@db:5432/postgres
+      - WEBSITE_PORT=80
     ports:
       - "80:80"
     networks:
