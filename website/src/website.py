@@ -6,6 +6,7 @@ from flask import Flask
 from flask import request
 
 import requests
+import os
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -39,6 +40,8 @@ app.wsgi_app = ProxyFix(
     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
 )
 
+EVALUATOR_ADDRESS = os.getenv("WEBSITE_EVALUATOR_URL", "http://evaluator:7800")
+
 
 @app.route("/")
 def index():
@@ -55,6 +58,6 @@ def run_code():
     code = request.json
     app.logger.info(code)
     app.logger.info("Received request for compilation, sending to server")
-    response = requests.post("http://evaluator:7800/run", json=code)
+    response = requests.post(f"{EVALUATOR_ADDRESS}/run", json=code)
     json = response.json()
     return json

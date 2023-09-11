@@ -4,6 +4,7 @@ services:
     build: website
     environment:
       - WEBSITE_PORT=80
+      - WEBSITE_EVALUATOR_URL=http://evaluator:7800
     ports:
       - "80:80"
     networks:
