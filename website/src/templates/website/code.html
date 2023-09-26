@@ -6,8 +6,18 @@
 
 {% block content %}
 
-<div id="code-view">
-    <div id="code"></div>
+<div id="evaluator">
+    <div class="flex-1" id="code-view">
+        <div class="settings">
+            <select id="lua-version">
+                <option value="5.1">Lua 5.1</option>
+                <option value="5.2">Lua 5.2</option>
+                <option value="5.3">Lua 5.3</option>
+                <option value="jit">LuaJIT</option>
+            </select>
+        </div>
+        <div id="code" class="flex-1"></div>
+    </div>
 
     <div id="output-view">
         <div class="output" id="stdout">
