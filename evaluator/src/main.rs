@@ -7,6 +7,7 @@ use std::fs::File;
 use std::process::Command;
 use std::str;
 
+use http::{HttpRequest, HttpResponse};
 use rand::{distributions::Alphanumeric, Rng};
 
 use serde::{Deserialize, Serialize};
@@ -99,9 +100,36 @@ fn run_lua(folder: &str) -> Result<ResponsePayload> {
     })
 }
 
+fn handle_cors(req: HttpRequest) -> Result<HttpResponse> {
+    println!("Handling CORS preflight, headers: {:?}", req.headers);
+    let response = http::HttpResponse {
+        code: "204".to_string(),
+        reason_phrase: "OK".to_string(),
+        headers: vec![
+            ("Access-Control-Allow-Origin".to_string(), "*".to_string()),
+            ("Access-Control-Allow-Methods".to_string(), "POST, GET, OPTIONS".to_string()),
+            ("Access-Control-Allow-Headers".to_string(), "Content-Type".to_string()),
+            ("Access-Control-Max-Age".to_string(), "86400".to_string()),
+            ("Cache-Control".to_string(), "no-store".to_string()),
+            ("Pragma".to_string(), "no-cache".to_string()),
+        ],
+        body: None,
+    };
+    return Ok(response);
+}
+
 async fn handle_connection(sock: TcpStream) -> Result<()> {
     let mut reader = BufReader::new(sock);
     let request = http::parse_http_request(&mut reader).await?;
+
+    println!("Request received: {:?}", request);
+
+    if request.method == "OPTIONS" {
+        let response = handle_cors(request)?;
+        let response_str = http::create_http_response(&response);
+        return reader.write_all(&response_str.as_bytes()).await;
+    }
+
     if request.path == "/liveness" {
         println!("Liveness check");
         // Lots of repeated code, refactor this liveness part.
@@ -119,7 +147,7 @@ async fn handle_connection(sock: TcpStream) -> Result<()> {
     }
 
     let content_type = request.content_type().ok_or(create_error("Content-Type must be present"))?;
-    if content_type != "application/json" {
+    if !content_type.starts_with("application/json") {
         return Err(create_error("Content type must be application/json"));
     }
 
@@ -171,7 +199,7 @@ async fn run_and_log(sock: TcpStream) {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("Running runtime server...");
+    println!("Running runtime server on port 7800...");
     let addr  = env::args()
         .nth(1)
         .unwrap_or_else(|| "0.0.0.0:7800".to_string());
