@@ -1,35 +1,25 @@
-# ====== Frontend build ======
-FROM node:20-bookworm
+# Build image
+FROM node as build
 
-WORKDIR /www/
-COPY src/editor-frontend/ editor-frontend/
+WORKDIR /app
+COPY . .
+RUN npm ci && npm run build
 
-RUN cd editor-frontend && npm ci && npm run build
 
+# Runtime image
+FROM node:20.9.0-alpine3.18
 
-# ====== Server runtime image ======
-FROM debian:bookworm
+WORKDIR /www/app
 
-ENV WEBSITE_PORT=3113
+RUN apk add curl
 
-RUN apt-get update && \
-    apt-get install -y \
-        python3 \
-        python3-flask \
-        python3-requests \
-        nginx \
-        gunicorn \
-        gettext-base
+COPY --from=build /app/node_modules node_modules
+COPY --from=build /app/build/ build
+COPY --from=build /app/package.json .
 
-COPY conf/nginx.conf.template /etc/nginx/nginx.conf.template
+EXPOSE 3000
 
-WORKDIR /www
+ENV WEBSITE_PROTOCOL_HEADER="X-Forwarded-Proto"
+ENV WEBSITE_HOST_HEADER="X-Forwarded-Host"
 
-COPY /src .
-# The multistage build does not preserve workdir
-COPY --from=0 /www/static/ static/
-COPY /scripts/entrypoint.sh scripts/
-
-EXPOSE ${WEBSITE_PORT}
-
-ENTRYPOINT ["/www/scripts/entrypoint.sh"]
+CMD ["node", "build"]

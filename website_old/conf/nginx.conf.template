@@ -1,0 +1,15 @@
+http {
+    server {
+        listen ${WEBSITE_PORT};
+        server_name coderunner3000.com;
+
+        root /www;
+        
+        location / {
+            proxy_pass http://127.0.0.1:8000;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Prefix /;
+        }
+    }
+}
