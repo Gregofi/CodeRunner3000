@@ -1,0 +1,51 @@
+name: dockerize and release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  dockerize_evaluator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push image
+        uses: ./.github/actions/push-to-dockerhub
+        with:
+          dockerhub-login: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          app-name: evaluator
+
+  dockerize_dind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push image
+        uses: ./.github/actions/push-to-dockerhub
+        with:
+          dockerhub-login: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          app-name: dind
+
+  dockerize_website:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push image
+        uses: ./.github/actions/push-to-dockerhub
+        with:
+          dockerhub-login: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          app-name: website
+
+  dockerize_website_proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push image
+        uses: ./.github/actions/push-to-dockerhub
+        with:
+          dockerhub-login: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          app-name: website_proxy
