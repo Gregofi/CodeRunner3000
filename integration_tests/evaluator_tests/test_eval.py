@@ -1,6 +1,6 @@
 import requests
 
-EVALUATOR_ADDRESS = "http://evaluator:7800/run"
+EVALUATOR_ADDRESS = "http://evaluator:7800/api/v1/evaluate"
 
 
 def generate_lua(code: str):

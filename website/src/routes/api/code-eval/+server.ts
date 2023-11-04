@@ -4,14 +4,16 @@ import { error } from '@sveltejs/kit';
 export type Language = "Lua";
 
 export async function POST({ request }: RequestEvent): Promise<Response> {
-  const url = import.meta.env.VITE_CODERUNNER_BACKEND_API as string;
-  if (!url) {
-    throw error(400, "Coderunner backend API URL is not set");
+  const url = import.meta.env.VITE_CODERUNNER_BACKEND_URL as string;
+  const api = import.meta.env.VITE_CODERUNNER_BACKEND_API_PATH as string;
+  if (!url || !api) {
+    console.log("Coderunner backend API URL is not set");
+    throw error(400, 'Internal server error');
   }
   const body = await request.text();
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(`${url}${api}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -21,6 +23,7 @@ export async function POST({ request }: RequestEvent): Promise<Response> {
     }); 
     return response;
   } catch (e) {
-    throw error(500, `Failed to compile code: ${e}`);
+    console.log("Failed to compile code: ", e);
+    throw error(500, `Internal server error`);
   }
 }
