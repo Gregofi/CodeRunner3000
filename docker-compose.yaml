@@ -7,8 +7,6 @@ services:
       - VITE_CODERUNNER_BACKEND_API_PATH=/api/v1/evaluate
     expose:
       - 3000
-    ports:
-      - 3000:3000
     networks:
       - code-exec-nw
     depends_on:
@@ -26,7 +24,7 @@ services:
     networks:
       - code-exec-nw
     ports:
-      - "80:80"
+      - 127.0.0.1:80:80
     depends_on:
       website:
         condition: service_healthy
