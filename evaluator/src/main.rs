@@ -13,9 +13,8 @@ use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 
 use serde::{Deserialize, Serialize};
-use serde_json;
 
-const TIMEOUT: &str = "5";
+// const TIMEOUT: &str = "5";
 const EVAL_FOLDER: &str = "eval_env";
 const MEMORY_LIMIT_MB: usize = 128;
 const CPUS_LIMIT: f64 = 0.25;
@@ -124,7 +123,7 @@ async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body
     let folder_name = random_filename();
     let path_str = format!(
         "/www/app/sources/{}/{}/source.{}",
-        data.language.to_string(),
+        data.language,
         folder_name,
         data.language.extension()
     );
@@ -132,8 +131,8 @@ async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).unwrap();
 
-    let mut file = File::create(&path)?;
-    file.write_all(&data.code.as_bytes())?;
+    let mut file = File::create(path)?;
+    file.write_all(data.code.as_bytes())?;
 
     let result = match data.language {
         Language::Lua => run_lua(&folder_name),
