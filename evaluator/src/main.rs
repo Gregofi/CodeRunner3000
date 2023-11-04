@@ -1,16 +1,16 @@
 use std::fs;
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::prelude::*;
+use std::net::SocketAddr;
 use std::process::Command;
 use std::str;
-use std::net::SocketAddr;
 
 use rand::{distributions::Alphanumeric, Rng};
 
-use anyhow::{Result, bail, anyhow};
+use anyhow::{anyhow, bail, Result};
 
-use hyper::{Body, Request, Response, Server, Method, StatusCode};
 use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Method, Request, Response, Server, StatusCode};
 
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -30,7 +30,7 @@ enum Language {
 impl std::fmt::Display for Language {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Language::Lua => f.write_str("lua")
+            Language::Lua => f.write_str("lua"),
         }
     }
 }
@@ -81,25 +81,40 @@ fn run_lua(folder: &str) -> Result<ResponsePayload> {
         .arg("/usr/bin/evaluate.sh")
         .output()?;
 
-    let stdout =  str::from_utf8(&exec.stdout).expect("Couldn't decode stdout").to_string();
-    let stderr = str::from_utf8(&exec.stderr).expect("Couldn't decode stderr").to_string();
+    let stdout = str::from_utf8(&exec.stdout)
+        .expect("Couldn't decode stdout")
+        .to_string();
+    let stderr = str::from_utf8(&exec.stderr)
+        .expect("Couldn't decode stderr")
+        .to_string();
 
-    println!("Lua finished, container stdout: '{}', stderr: '{}'", stdout, stderr);
+    println!(
+        "Lua finished, container stdout: '{}', stderr: '{}'",
+        stdout, stderr
+    );
 
-    let program_stdout = fs::read_to_string(format!("/www/app/sources/lua/{}/stdout.txt", folder)).expect("Unable to read stdout");
-    let program_stderr = fs::read_to_string(format!("/www/app/sources/lua/{}/stderr.txt", folder)).expect("Unable to read stdout");
+    let program_stdout = fs::read_to_string(format!("/www/app/sources/lua/{}/stdout.txt", folder))
+        .expect("Unable to read stdout");
+    let program_stderr = fs::read_to_string(format!("/www/app/sources/lua/{}/stderr.txt", folder))
+        .expect("Unable to read stdout");
 
     Ok(ResponsePayload {
-        stdout: program_stdout[..std::cmp::min(MAX_STRING_OUTPUT_LENGTH, program_stdout.len())].to_string(),
-        stderr: program_stderr[..std::cmp::min(MAX_STRING_OUTPUT_LENGTH, program_stderr.len())].to_string(),
+        stdout: program_stdout[..std::cmp::min(MAX_STRING_OUTPUT_LENGTH, program_stdout.len())]
+            .to_string(),
+        stderr: program_stderr[..std::cmp::min(MAX_STRING_OUTPUT_LENGTH, program_stderr.len())]
+            .to_string(),
     })
 }
 
 async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body>> {
-    let content_type = req.headers().get("Content-Type").ok_or(anyhow!("Content-Length is missing"))?.to_str()?.to_owned();
+    let content_type = req
+        .headers()
+        .get("Content-Type")
+        .ok_or(anyhow!("Content-Length is missing"))?
+        .to_str()?
+        .to_owned();
     let body_bytes = hyper::body::to_bytes(req.into_body()).await?;
     let body = String::from_utf8(body_bytes.to_vec())?;
-
 
     let data: RequestPayload = match content_type.as_str() {
         "application/json" => serde_json::from_str(&body)?,
@@ -107,7 +122,12 @@ async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body
     };
 
     let folder_name = random_filename();
-    let path_str = format!("/www/app/sources/{}/{}/source.{}", data.language.to_string(), folder_name, data.language.extension());
+    let path_str = format!(
+        "/www/app/sources/{}/{}/source.{}",
+        data.language.to_string(),
+        folder_name,
+        data.language.extension()
+    );
     let path = std::path::Path::new(&path_str);
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).unwrap();
@@ -126,16 +146,13 @@ async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body
     let response = Response::builder()
         .header("Content-Type", "application/json")
         .body(Body::from(response_payload))?;
-    
+
     Ok(response)
 }
 
 async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
-
     match (req.method(), req.uri().path()) {
-        (&Method::GET, "/liveness") => {
-            Ok(Response::new(Body::from("OK")))
-        },
+        (&Method::GET, "/liveness") => Ok(Response::new(Body::from("OK"))),
         (&Method::POST, "/api/v1/evaluate") => {
             let res = handle_eval_request(req).await;
             match res {
@@ -147,7 +164,7 @@ async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
                     Ok(response)
                 }
             }
-        },
+        }
         _ => {
             let mut response = Response::new(Body::empty());
             *response.status_mut() = StatusCode::NOT_FOUND;
@@ -158,9 +175,8 @@ async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let make_svc = make_service_fn(|_conn| async {
-        Ok::<_, hyper::Error>(service_fn(handle_connection))
-    });
+    let make_svc =
+        make_service_fn(|_conn| async { Ok::<_, hyper::Error>(service_fn(handle_connection)) });
     let addr = SocketAddr::from(([0, 0, 0, 0], 7800));
     let server = Server::bind(&addr).serve(make_svc);
 
@@ -172,7 +188,7 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod test {
     use super::*;
-    fn parse_json(s: &str) -> Result<RequestPayload, > {
+    fn parse_json(s: &str) -> Result<RequestPayload> {
         let res: RequestPayload = serde_json::from_str(s)?;
         Ok(res)
     }
