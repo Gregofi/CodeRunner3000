@@ -1,20 +1,19 @@
-pub mod http;
-
-use std::collections::HashMap;
-use std::{env, fs};
-use std::io::{Result, Error, ErrorKind, prelude::*};
+use std::fs;
+use std::io::prelude::*;
 use std::fs::File;
 use std::process::Command;
 use std::str;
+use std::net::SocketAddr;
 
-use http::{HttpRequest, HttpResponse};
 use rand::{distributions::Alphanumeric, Rng};
+
+use anyhow::{Result, bail, anyhow};
+
+use hyper::{Body, Request, Response, Server, Method, StatusCode};
+use hyper::service::{make_service_fn, service_fn};
 
 use serde::{Deserialize, Serialize};
 use serde_json;
-
-use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpListener, TcpStream};
 
 const TIMEOUT: &str = "5";
 const EVAL_FOLDER: &str = "eval_env";
@@ -56,10 +55,6 @@ struct ResponsePayload {
     stderr: String,
 }
 
-fn create_error(err: &str) -> Error {
-    Error::new(ErrorKind::Other, err)
-}
-
 fn random_filename() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -86,8 +81,8 @@ fn run_lua(folder: &str) -> Result<ResponsePayload> {
         .arg("/usr/bin/evaluate.sh")
         .output()?;
 
-    let stdout =  str::from_utf8(&exec.stdout).unwrap().to_string();
-    let stderr = str::from_utf8(&exec.stderr).unwrap().to_string();
+    let stdout =  str::from_utf8(&exec.stdout).expect("Couldn't decode stdout").to_string();
+    let stderr = str::from_utf8(&exec.stderr).expect("Couldn't decode stderr").to_string();
 
     println!("Lua finished, container stdout: '{}', stderr: '{}'", stdout, stderr);
 
@@ -100,122 +95,84 @@ fn run_lua(folder: &str) -> Result<ResponsePayload> {
     })
 }
 
-fn handle_cors(req: HttpRequest) -> Result<HttpResponse> {
-    println!("Handling CORS preflight, headers: {:?}", req.headers);
-    let response = http::HttpResponse {
-        code: "204".to_string(),
-        reason_phrase: "OK".to_string(),
-        headers: vec![
-            ("Access-Control-Allow-Origin".to_string(), "*".to_string()),
-            ("Access-Control-Allow-Methods".to_string(), "POST, GET, OPTIONS".to_string()),
-            ("Access-Control-Allow-Headers".to_string(), "Content-Type".to_string()),
-            ("Access-Control-Max-Age".to_string(), "86400".to_string()),
-            ("Cache-Control".to_string(), "no-store".to_string()),
-            ("Pragma".to_string(), "no-cache".to_string()),
-        ],
-        body: None,
+async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body>> {
+    let content_type = req.headers().get("Content-Type").ok_or(anyhow!("Content-Length is missing"))?.to_str()?.to_owned();
+    let body_bytes = hyper::body::to_bytes(req.into_body()).await?;
+    let body = String::from_utf8(body_bytes.to_vec())?;
+
+
+    let data: RequestPayload = match content_type.as_str() {
+        "application/json" => serde_json::from_str(&body)?,
+        _ => bail!("Unsupported content type"),
     };
-    return Ok(response);
-}
-
-async fn handle_connection(sock: TcpStream) -> Result<()> {
-    let mut reader = BufReader::new(sock);
-    let request = http::parse_http_request(&mut reader).await?;
-
-    println!("Request received: {:?}", request);
-
-    if request.method == "OPTIONS" {
-        let response = handle_cors(request)?;
-        let response_str = http::create_http_response(&response);
-        return reader.write_all(&response_str.as_bytes()).await;
-    }
-
-    if request.path == "/liveness" {
-        println!("Liveness check");
-        // Lots of repeated code, refactor this liveness part.
-        let response = http::HttpResponse {
-            code: "204".to_string(),
-            reason_phrase: "OK".to_string(),
-            headers: vec![
-                ("Cache-Control".to_string(), "no-store".to_string()),
-                ("Pragma".to_string(), "no-cache".to_string()),
-            ],
-            body: None,
-        };
-        let response_str = http::create_http_response(&response);
-        return reader.write_all(&response_str.as_bytes()).await;
-    }
-
-    let content_type = request.content_type().ok_or(create_error("Content-Type must be present"))?;
-    if !content_type.starts_with("application/json") {
-        return Err(create_error("Content type must be application/json"));
-    }
-
-    let json = request.content.unwrap();
-    println!("Payload received: {}", json);
-    let instructions: RequestPayload = serde_json::from_str(&json)?;
 
     let folder_name = random_filename();
-    let path_str = format!("/www/app/sources/{}/{}/source.{}", instructions.language.to_string(), folder_name, instructions.language.extension());
+    let path_str = format!("/www/app/sources/{}/{}/source.{}", data.language.to_string(), folder_name, data.language.extension());
     let path = std::path::Path::new(&path_str);
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).unwrap();
 
     let mut file = File::create(&path)?;
-    file.write_all(&instructions.code.as_bytes())?;
+    file.write_all(&data.code.as_bytes())?;
 
-    let result = match instructions.language {
+    let result = match data.language {
         Language::Lua => run_lua(&folder_name),
     }?;
 
     // Keep the folders for now so that we can properly inspect errors
- // fs::remove_dir_all(folder_name)?;
+    // fs::remove_dir_all(folder_name)?;
 
     let response_payload = serde_json::to_string(&result)?;
+    let response = Response::builder()
+        .header("Content-Type", "application/json")
+        .body(Body::from(response_payload))?;
     
-    let response = http::HttpResponse {
-        code: "200".to_string(),
-        reason_phrase: "OK".to_string(),
-        headers: vec![
-            ("Content-Type".to_string(), "application/json".to_string()),
-            ("Content-Length".to_string(), format!("{}", response_payload.len())),
-        ],
-        body: Some(response_payload),
-    };
-
-    let response_str = http::create_http_response(&response);
-    reader.write_all(&response_str.as_bytes()).await
+    Ok(response)
 }
 
-async fn run_and_log(sock: TcpStream) {
-    println!("Handling connection");
-    match handle_connection(sock).await {
-        Ok(_) => (),
-        Err(e) => {
-            println!("Error while handling connection: {:?}", e);
+async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
+
+    match (req.method(), req.uri().path()) {
+        (&Method::GET, "/liveness") => {
+            Ok(Response::new(Body::from("OK")))
         },
+        (&Method::POST, "/api/v1/evaluate") => {
+            let res = handle_eval_request(req).await;
+            match res {
+                Ok(r) => Ok(r),
+                Err(e) => {
+                    println!("Error: {:?}", e);
+                    let mut response = Response::new(Body::from(e.to_string()));
+                    *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                    Ok(response)
+                }
+            }
+        },
+        _ => {
+            let mut response = Response::new(Body::empty());
+            *response.status_mut() = StatusCode::NOT_FOUND;
+            Ok(response)
+        }
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("Running runtime server on port 7800...");
-    let addr  = env::args()
-        .nth(1)
-        .unwrap_or_else(|| "0.0.0.0:7800".to_string());
+    let make_svc = make_service_fn(|_conn| async {
+        Ok::<_, hyper::Error>(service_fn(handle_connection))
+    });
+    let addr = SocketAddr::from(([0, 0, 0, 0], 7800));
+    let server = Server::bind(&addr).serve(make_svc);
 
-    let listener = TcpListener::bind(&addr).await?;
-    
-    loop {
-        let (socket, _) = listener.accept().await?;
-        tokio::spawn(run_and_log(socket));
-    }
+    println!("Listening on http://{}", addr);
+    server.await?;
+    Ok(())
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    fn parse_json(s: &str) -> Result<RequestPayload> {
+    fn parse_json(s: &str) -> Result<RequestPayload, > {
         let res: RequestPayload = serde_json::from_str(s)?;
         Ok(res)
     }

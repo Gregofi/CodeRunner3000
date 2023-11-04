@@ -3,7 +3,8 @@ services:
   website:
     build: website
     environment:
-      - VITE_CODERUNNER_BACKEND_API=http://evaluator:7800
+      - VITE_CODERUNNER_BACKEND_URL=http://evaluator:7800
+      - VITE_CODERUNNER_BACKEND_API_PATH=/api/v1/evaluate
     expose:
       - 3000
     ports:
