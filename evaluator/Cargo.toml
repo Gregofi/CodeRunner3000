@@ -14,3 +14,8 @@ rand = "0.8"
 hyper = { version = "0.14", features = ["full"] }
 anyhow = "1.0.75"
 futures = "0.3.29"
+metrics = "0.21.1"
+lazy_static = "1.4.0"
+prometheus-client = "0.22.0"
+metrics-exporter-prometheus = "0.12.1"
+metrics-util = "0.15.1"

@@ -4,6 +4,7 @@ use std::io::prelude::*;
 use std::net::SocketAddr;
 use std::process::Command;
 use std::str;
+use std::sync::atomic::AtomicUsize;
 
 use rand::{distributions::Alphanumeric, Rng};
 
@@ -13,6 +14,23 @@ use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 
 use serde::{Deserialize, Serialize};
+
+use metrics::{counter, describe_counter, describe_histogram, histogram, Unit};
+use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
+use metrics_util::MetricKindMask;
+
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref LUA_REQUEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static ref PROMETHEUS: PrometheusHandle = PrometheusBuilder::new()
+        .idle_timeout(
+            MetricKindMask::COUNTER,
+            Some(std::time::Duration::from_secs(1))
+        )
+        .install_recorder()
+        .expect("Failed to create PrometheusBuilder");
+}
 
 // const TIMEOUT: &str = "5";
 const EVAL_FOLDER: &str = "eval_env";
@@ -67,6 +85,7 @@ fn run_lua(folder: &str) -> Result<ResponsePayload> {
     // The path to the sources must be inside the DIND container,
     // not this one!
     println!("/www/app/sources/lua/{}", folder);
+    let start = std::time::Instant::now();
     let exec = Command::new("docker")
         .arg("run")
         .arg("--network")
@@ -79,6 +98,9 @@ fn run_lua(folder: &str) -> Result<ResponsePayload> {
         .arg("lua-runtime")
         .arg("/usr/bin/evaluate.sh")
         .output()?;
+    let delta = start.elapsed();
+    counter!("lua_requests", 1);
+    histogram!("lua_request_duration_seconds", delta.as_secs_f64());
 
     let stdout = str::from_utf8(&exec.stdout)
         .expect("Couldn't decode stdout")
@@ -164,6 +186,11 @@ async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
                 }
             }
         }
+        (&Method::GET, "/metrics") => {
+            let mut response = Response::new(Body::from(PROMETHEUS.render()));
+            *response.status_mut() = StatusCode::OK;
+            Ok(response)
+        }
         _ => {
             let mut response = Response::new(Body::empty());
             *response.status_mut() = StatusCode::NOT_FOUND;
@@ -174,6 +201,13 @@ async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    describe_counter!("lua_requests", "Number of requests to the Lua evaluator");
+    describe_histogram!(
+        "lua_request_duration_seconds",
+        Unit::Seconds,
+        "Duration of Lua requests"
+    );
+
     let make_svc =
         make_service_fn(|_conn| async { Ok::<_, hyper::Error>(service_fn(handle_connection)) });
     let addr = SocketAddr::from(([0, 0, 0, 0], 7800));
