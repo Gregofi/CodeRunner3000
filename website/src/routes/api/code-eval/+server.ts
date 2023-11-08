@@ -23,7 +23,10 @@ export async function POST({ request }: RequestEvent): Promise<Response> {
 		});
 		return response;
 	} catch (e) {
-		console.log('Failed to compile code: ', e);
+		console.log('Failed to compile code');
+		console.log(' - Backend URL', url);
+		console.log(' - Backend API', api);
+		console.log(e);
 		throw error(500, `Internal server error`);
 	}
 }
