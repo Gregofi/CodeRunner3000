@@ -74,6 +74,16 @@ services:
       retries: 2
       start_period: 1s
 
+  statserver:
+    build: statserver
+    environment:
+      - PORT=9898
+    ports:
+      - "127.0.0.1:9898:9898"
+    networks:
+      - code-exec-nw
+
+
 volumes:
   dind-certs-client:
   dind-certs-ca:
