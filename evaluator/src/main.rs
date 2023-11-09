@@ -17,17 +17,12 @@ use serde::{Deserialize, Serialize};
 
 use metrics::{counter, describe_counter, describe_histogram, histogram, Unit};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
-use metrics_util::MetricKindMask;
 
 use lazy_static::lazy_static;
 
 lazy_static! {
     static ref LUA_REQUEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
     static ref PROMETHEUS: PrometheusHandle = PrometheusBuilder::new()
-        .idle_timeout(
-            MetricKindMask::COUNTER,
-            Some(std::time::Duration::from_secs(1))
-        )
         .install_recorder()
         .expect("Failed to create PrometheusBuilder");
 }
