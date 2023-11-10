@@ -8,6 +8,19 @@
 	function getEditorValue() {
 		return editor.getValue();
 	}
+
+	function setEditorValue(code: string) {
+		editor.setValue(code);
+	}
+
+	function getUnderlyingEditor() {
+		return editor;
+	}
+
+	function onDidChangeContent(callback: () => void) {
+		editor.onDidChangeModelContent(callback);
+	}
+
 	let editorContainer: HTMLElement;
 	let editorParent: HTMLDivElement;
 
@@ -42,6 +55,14 @@
 				editor.layout(editorParent.getBoundingClientRect());
 			});
 		});
+
+		const event = new CustomEvent('editor-loaded', {
+			detail: {
+				editor: editor
+			}
+		});
+
+		window.dispatchEvent(event);
 	});
 
 	onDestroy(() => {
@@ -49,7 +70,7 @@
 		editor?.dispose();
 	});
 
-	export { getEditorValue };
+	export { getEditorValue, setEditorValue, getUnderlyingEditor, onDidChangeContent };
 </script>
 
 <div class="h-full" bind:this={editorParent}>
