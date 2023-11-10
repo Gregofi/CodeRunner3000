@@ -34,7 +34,7 @@
 	};
 </script>
 
-<div class="flex flex-row grow">
+<div class="flex flex-row max-xl:flex-col grow">
 	<div class="border border-gray-300 grow flex flex-col">
 		<div class="ml-2 h-10 flex items-center">
 			<div>
@@ -45,7 +45,7 @@
 			<MonacoEditor bind:this={editor} />
 		</div>
 	</div>
-	<div class="w-1/2 flex flex-col">
+	<div class="xl:w-1/2 max-xl:h-1/3 flex flex-col">
 		<div
 			class="relative border font-mono p-2 border-gray-300 h-1/2 {loading ? 'bg-slate-200' : ''}"
 		>
