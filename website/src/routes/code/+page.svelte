@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import MonacoEditor from '$lib/monaco/MonacoEditor.svelte';
 	import Spinner from '$lib/Spinner.svelte';
 
@@ -6,6 +7,8 @@
 	let stdout: HTMLElement;
 	let editor: MonacoEditor;
 	let loading = false;
+	let timer;
+	const delay = 1000;
 
 	const compile = async () => {
 		const code = editor.getEditorValue();
@@ -32,6 +35,31 @@
 		}
 		loading = false;
 	};
+
+	const setEditorDebounce = () => {
+		if (!editor) {
+			return;
+		}
+		editor.onDidChangeContent(() => {
+			clearTimeout(timer);
+			timer = setTimeout(() => {
+				compile();
+			}, delay);
+		});
+	};
+
+	onMount(() => {
+		window.addEventListener('editor-loaded', () => {
+			setEditorDebounce();
+			window.addEventListener('keydown', (e) => {
+				if (e.ctrlKey && e.key === 's') {
+					clearTimeout(timer);
+					e.preventDefault();
+					compile();
+				}
+			});
+		});
+	});
 </script>
 
 <div class="flex flex-row max-xl:flex-col grow">
