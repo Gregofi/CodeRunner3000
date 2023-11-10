@@ -28,8 +28,6 @@ services:
 
   evaluator:
     build: evaluator
-    ports:
-      - "7800:7800"
     depends_on:
       dind:
         condition: service_healthy
