@@ -49,3 +49,14 @@ jobs:
           dockerhub-login: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
           app-name: website_proxy
+
+  dockerize_statserver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push image
+        uses: ./.github/actions/push-to-dockerhub
+        with:
+          dockerhub-login: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          app-name: statserver

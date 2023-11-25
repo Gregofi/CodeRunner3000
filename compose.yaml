@@ -47,7 +47,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
-      start_period: 5s
+      start_period: 300s
 
   dind:
     build: dind
@@ -70,7 +70,7 @@ services:
       interval: 3s
       timeout: 5s
       retries: 2
-      start_period: 1s
+      start_period: 300s
 
   statserver:
     build: statserver
