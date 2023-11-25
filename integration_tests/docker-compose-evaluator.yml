@@ -20,10 +20,10 @@ services:
       - code-exec-nw
     healthcheck:
       test: ["CMD", "curl", "-f", "localhost:7800/liveness"]
-      interval: 5s
-      timeout: 3s
-      retries: 2
-      start_period: 1s
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
   dind:
     build: ../dind
@@ -43,10 +43,10 @@ services:
       - 2376
     healthcheck:
       test: ["CMD", "docker", "info"]
-      interval: 3s
+      interval: 15s
       timeout: 5s
-      retries: 2
-      start_period: 1s
+      retries: 3
+      start_period: 60s
 
   test:
     build: evaluator_tests

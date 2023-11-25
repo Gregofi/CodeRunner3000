@@ -1,9 +1,12 @@
 #!/bin/bash
 
-cd images
+set -e
 
-# TODO: Upload them to dockerhub and then just pull them.
-docker build -f lua/Dockerfile-lua --tag lua-runtime lua
-cd ..
+pushd images
+docker build -f Dockerfile --tag base-runtime-alpine .
+
+# Specify further images here, all must inherit from base-runtime-alpine:
+# docker build -f lua5.1/Dockerfile --tag lua-runtime lua5.1
+popd
 
 ./evaluator

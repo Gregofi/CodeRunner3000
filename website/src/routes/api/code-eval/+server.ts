@@ -1,8 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { error } from '@sveltejs/kit';
 
-export type Language = 'Lua';
-
 export async function POST({ request }: RequestEvent): Promise<Response> {
 	const url = import.meta.env.VITE_CODERUNNER_BACKEND_URL as string;
 	const api = import.meta.env.VITE_CODERUNNER_BACKEND_API_PATH as string;
@@ -11,7 +9,7 @@ export async function POST({ request }: RequestEvent): Promise<Response> {
 		throw error(400, 'Internal server error');
 	}
 	const body = await request.text();
-
+	console.log('Request body', body);
 	try {
 		const response = await fetch(`${url}${api}`, {
 			method: 'POST',

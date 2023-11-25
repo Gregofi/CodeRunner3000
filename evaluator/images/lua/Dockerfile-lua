@@ -1,6 +1,0 @@
-FROM alpine
-
-RUN apk --no-cache add lua5.1 sudo
-
-COPY evaluate.sh /usr/bin/evaluate.sh
-COPY evaluate.lua /usr/bin/evaluate.lua
