@@ -1,5 +1,7 @@
 mod docker;
 mod spec;
+use metrics::{counter, describe_counter, describe_gauge, Label};
+use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
 use spec::{ExecutionStep, RunOptions, RunSpec};
 
@@ -20,9 +22,6 @@ use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 
 use serde::{Deserialize, Serialize};
-
-use metrics::{counter, describe_counter, describe_gauge};
-use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
 use lazy_static::lazy_static;
 
@@ -159,8 +158,11 @@ async fn do_one_step(
 }
 
 async fn run_spec(spec: &RunSpec, eval_id: &str) -> Result<ResponsePayload> {
-    counter!(format!("{}_requests", spec.name), 1);
-
+    counter!(
+        "evaluator_requests",
+        1,
+        vec![Label::new("language", spec.name.clone())]
+    );
     docker::create_volume(eval_id).context("Unable to create volume")?;
 
     for step in &spec.steps {
@@ -170,7 +172,11 @@ async fn run_spec(spec: &RunSpec, eval_id: &str) -> Result<ResponsePayload> {
             step.name, res.exit_code
         );
         if res.exit_code != 0 {
-            counter!(format!("{}_errors", spec.name), 1);
+            counter!(
+                "evaluator_errors",
+                1,
+                vec![Label::new("language", spec.name.clone())]
+            );
             println!(
                 "Step '{}' failed with exit code {}, stderr: {}",
                 step.name,
@@ -324,16 +330,11 @@ async fn main() -> Result<()> {
         "total_evaluator_errors",
         "Total number of errors (panics) in the evaluator"
     );
-    CONFIG.iter().for_each(|(name, _)| {
-        describe_counter!(
-            format!("{}_requests", name),
-            format!("Number of requests to the {} evaluator", name)
-        );
-        describe_counter!(
-            format!("{}_errors", name),
-            format!("Number of errors in the {} user submitted program", name)
-        );
-    });
+    describe_counter!("evaluator_requests", "Number of requests to the evaluator");
+    describe_counter!(
+        "evaluator_errors",
+        "Number of errors in the user submitted program"
+    );
 
     let make_svc =
         make_service_fn(|_conn| async { Ok::<_, hyper::Error>(service_fn(handle_connection)) });
