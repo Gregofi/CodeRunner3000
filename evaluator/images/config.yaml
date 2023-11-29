@@ -16,14 +16,14 @@
 - name: racket
   packages: ["racket"]
   run_options:
-    memory_limit: 128m
-    cpus_limit: 0.25
+    memory_limit: 256m
+    cpus_limit: 5
     pids_limit: 8
     storage_limit: 64m
   steps:
     - name: "execute"
       command: ["racket", "source"]
-      timeout: 5
+      timeout: 15
       stdout: "stdout.txt"
       stderr: "stderr.txt"
 
@@ -43,8 +43,8 @@
 
 - name: c
   run_options:
-    memory_limit: 128m
-    cpus_limit: 0.25
+    memory_limit: 256m
+    cpus_limit: 1
     pids_limit: 8
     storage_limit: 64m
   packages: ["gcc", "musl-dev"]
@@ -76,8 +76,8 @@
 
 - name: cpp23gcc
   run_options:
-    memory_limit: 128m
-    cpus_limit: 0.25
+    memory_limit: 512m
+    cpus_limit: 1
     pids_limit: 8
     storage_limit: 64m
   packages: ["gcc", "g++", "musl-dev"]
