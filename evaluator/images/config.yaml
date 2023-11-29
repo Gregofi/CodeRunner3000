@@ -17,7 +17,7 @@
   packages: ["racket"]
   run_options:
     memory_limit: 256m
-    cpus_limit: 5
+    cpus_limit: 0.5
     pids_limit: 8
     storage_limit: 64m
   steps:
