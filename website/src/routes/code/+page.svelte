@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import MonacoEditor from '$lib/monaco/MonacoEditor.svelte';
 	import Spinner from '$lib/Spinner.svelte';
+    import Modal from '$lib/Modal.svelte';
 
 	interface ILanguage {
 		name: string;
@@ -30,6 +31,8 @@
 	let loading = false;
 	let timer;
 	let current_language = 'lua';
+    let showModal = false;
+    let lastUrl = '';
 	const delay = 1000;
 
 	const compile = async () => {
@@ -76,6 +79,18 @@
 		editor.changeLanguage(language);
 	};
 
+    const createLink = () => {
+        const code = editor.getEditorValue();
+        const language = current_language;
+        const urlParams = new URLSearchParams();
+        urlParams.set('input', btoa(JSON.stringify({code, language})));
+        const url = `${window.location.origin}${window.location.pathname}?${urlParams.toString()}`;
+        if (url.length > 2000) {
+            console.log('URL too long, might not be supported by some browsers.');
+        }
+        return url;
+    };
+
 	onMount(() => {
 		window.addEventListener('editor-loaded', () => {
 			setEditorDebounce();
@@ -87,8 +102,36 @@
 				}
 			});
 			compile();
+
+            // Check if we have a code in the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('input')) {
+                const codedInput = urlParams.get('input');
+                const input = JSON.parse(atob(codedInput));
+                const code = input.code;
+                const language = input.language;
+                if (code && language && languages[language] !== undefined) {
+                    current_language = language;
+                    languageChange();
+                    editor.setEditorValue(code);
+                }
+            }
 		});
 	});
+
+    const changeButtonText = (elem: HTMLButtonElement, text: string) => {
+        let oldText = elem.innerText;
+        elem.innerText = text;
+        elem.disabled = true;
+        elem.style.webkitFilter = 'grayscale(1)';
+        elem.style.cursor = 'not-allowed';
+        setTimeout(() => {
+            elem.innerText = oldText;
+            elem.disabled = false;
+            elem.style.webkitFilter = 'grayscale(0)';
+        elem.style.cursor = 'pointer';
+        }, 2000);
+    }
 </script>
 
 <div class="flex flex-row max-xl:flex-col grow">
@@ -106,6 +149,7 @@
 						<option value={language.name}>{language.text}</option>
 					{/each}
 				</select>
+                <button class="btn" on:click={() => {showModal = true; lastUrl = createLink();}}>Share</button>
 			</div>
 		</div>
 		<div class="grow">
@@ -135,6 +179,19 @@
 		</div>
 	</div>
 </div>
+
+<Modal bind:showModal>
+    <div slot="header">
+        <h1 class="text-xl font-bold">Share</h1>
+    </div>
+    <p>Use the following link to share your code:</p>
+    <input class="border w-96 p-1 rounded-lg" type="text" value={lastUrl} readonly />
+    <button class="btn btn-blue mt-2 w-44" on:click={(e) => {navigator.clipboard.writeText(lastUrl); changeButtonText(e.target, "Copied!")}}>Copy to clipboard</button>
+    {#if lastUrl.length > 2048}
+        <p class="text-red-500">Warning: URL too long, might not be supported by some browsers.</p>
+    {/if}
+</Modal>
+
 
 <style>
 	:global(body) {
