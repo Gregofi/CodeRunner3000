@@ -7,10 +7,21 @@ import (
     "io"
 )
 
+type nginxEndpoint struct {
+    endpoint string
+    authorization string
+}
+
 var (
     port = os.Getenv("PORT")
     endpoints = []string{
         "evaluator:7800/metrics",
+    }
+    nginx_endpoints = []nginxEndpoint{
+        nginxEndpoint{
+            endpoint: "website-proxy:80/nginx_status",
+            authorization: os.Getenv("WEBSITE_PROXY_NGINX_STATUS_TOKEN"),
+        },
     }
 )
 
@@ -33,7 +44,40 @@ func allMetrics(w http.ResponseWriter, r *http.Request) {
         metrics += "# Source: " + endpoint + "\n"
         metrics += string(b) + "\n";
     }
+    for _, endpoint := range nginx_endpoints {
+        req, err := http.NewRequest("GET", "http://" + endpoint.endpoint, nil)
+        if err != nil {
+            fmt.Fprintf(w, "Error: %s\n", err)
+            continue
+        }
+        req.Header.Set("Authorization", "Bearer " + endpoint.authorization)
+
+        resp, err := http.DefaultClient.Do(req)
+        if err != nil {
+            fmt.Fprintf(w, "Error: %s\n", err)
+            return
+        }
+        defer resp.Body.Close()
+
+        b, err := io.ReadAll(resp.Body)
+        if err != nil {
+            fmt.Fprintf(w, "Error fetching metrics from endpoint %s: %s\n", endpoint, err)
+            continue
+        }
+
+        parsed := parseNginxMetrics(string(b))
+        metrics += "# Source: " + endpoint.endpoint + "\n"
+        metrics += parsed + "\n";
+    }
+
     w.Write([]byte(metrics))
+}
+
+func parseNginxMetrics(metrics string) string {
+    var active, accepts, handled, requests, reading, writing, waiting int
+    fmt.Sscanf(metrics, "Active connections: %d\nserver accepts handled requests\n %d %d %d\nReading: %d Writing: %d Waiting: %d\n", &active, &accepts, &handled, &requests, &reading, &writing, &waiting)
+    parsedMetrics := fmt.Sprintf("nginx_active_connections %d\nnginx_accepts %d\nnginx_handled %d\nnginx_requests %d\nnginx_reading %d\nnginx_writing %d\nnginx_waiting %d\n", active, accepts, handled, requests, reading, writing, waiting)
+    return parsedMetrics
 }
 
 func main() {

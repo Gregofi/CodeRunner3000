@@ -22,5 +22,12 @@ http {
 
             proxy_pass http://website;
         }
+
+        location /nginx_status {
+            if ($http_authorization != "Bearer $WEBSITE_PROXY_NGINX_STATUS_TOKEN") {
+                return 401;
+            }
+            stub_status;
+        }
     }
 }
