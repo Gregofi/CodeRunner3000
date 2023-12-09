@@ -32,3 +32,7 @@ used in the component, for example Evaluator uses `cargo test`, while website mi
 
 Integration tests are in separate folder, and can be run like this `docker
 compose -f <test_file> run --build test`.
+
+## Release
+Create a new github release. The pipeline will build docker image for each component
+and push it to dockerhub under the latest tag.
