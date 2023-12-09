@@ -18,6 +18,8 @@ services:
 
   website-proxy:
     build: website_proxy
+    environment:
+      - WEBSITE_PROXY_NGINX_STATUS_TOKEN=super_secret # Change in prod!
     networks:
       - code-exec-nw
     ports:
@@ -76,6 +78,7 @@ services:
     build: statserver
     environment:
       - PORT=9898
+      - WEBSITE_PROXY_NGINX_STATUS_TOKEN=super_secret # Change in prod!
     ports:
       - "127.0.0.1:9898:9898"
     networks:
