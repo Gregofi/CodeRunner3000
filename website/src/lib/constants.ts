@@ -1,4 +1,8 @@
-export const defaultPrograms = {
+export interface IPrograms {
+	[key: string]: string;
+}
+
+export const defaultPrograms: IPrograms = {
 	lua: [
 		'local function fact(n)',
 		'    if n == 0 then',

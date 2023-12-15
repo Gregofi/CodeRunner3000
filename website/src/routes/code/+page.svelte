@@ -3,7 +3,8 @@
 	import MonacoEditor from '$lib/monaco/MonacoEditor.svelte';
 	import Spinner from '$lib/Spinner.svelte';
 	import Modal from '$lib/Modal.svelte';
-	import { defaultPrograms } from '$lib/constants.ts';
+	import { defaultPrograms } from '$lib/constants';
+    import { getSettings, setVimMode } from '$lib/settings';
 
 	interface ILanguage {
 		name: string;
@@ -17,7 +18,7 @@
 		text: string;
 	}
 
-	const languages: ILanguage = {
+	const languages: { [key in string]: ILanguage } = {
 		lua: { name: 'lua', server_name: 'lua5.1', editor_name: 'lua', text: 'Lua 5.1' },
 		python3: { name: 'python3', server_name: 'python3', editor_name: 'python', text: 'Python 3' },
 		racket: { name: 'racket', server_name: 'racket', editor_name: 'scheme', text: 'Racket' },
@@ -30,10 +31,11 @@
 	let stderr: HTMLElement;
 	let editor: MonacoEditor;
 	let loading = false;
-	let timer;
+	let timer: ReturnType<typeof setTimeout>;
 	let current_language = 'lua';
 	let showModal = false;
 	let lastUrl = '';
+    let vimChecker: HTMLInputElement;
 	const delay = 1000;
 
 	const compile = async () => {
@@ -128,8 +130,19 @@
 		return url;
 	};
 
+    const toggleVimMode = (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        setVimMode(target.checked);
+        if (target.checked) {
+            editor.turnOnVimMode();
+        } else {
+            editor.turnOffVimMode();
+        }
+    }
+
 	onMount(() => {
 		window.addEventListener('editor-loaded', () => {
+            const settings = getSettings();
 			setEditorDebounce();
 			window.addEventListener('keydown', (e) => {
 				if (e.ctrlKey && e.key === 's') {
@@ -140,11 +153,16 @@
 			});
 			compile();
 
+            if (settings.vimMode) {
+                vimChecker.checked = true;
+                editor.turnOnVimMode();
+            }
+
 			// Check if we have a code in the URL.
 			// If not then check if we have a saved program in local storage.
 			const urlParams = new URLSearchParams(window.location.search);
-			if (urlParams.has('input')) {
-				const codedInput = urlParams.get('input');
+			const codedInput = urlParams.get('input');
+			if (codedInput !== null) {
 				const input = JSON.parse(atob(codedInput));
 				const code = input.code;
 				const language = input.language;
@@ -154,9 +172,11 @@
 					editor.setEditorValue(code);
 				}
 			} else {
-				renderDefaultCode();
+				const loadedFromLocal = loadFromLocalStorage();
+				if (!loadedFromLocal) {
+					renderDefaultCode();
+				}
 				// And overwrite it with the saved program if it exists.
-				loadFromLocalStorage();
 			}
 		});
 	});
@@ -198,6 +218,8 @@
 						lastUrl = createLink();
 					}}>Share</button
 				>
+                <input type="checkbox" name="vim-mode" on:change={toggleVimMode} bind:this={vimChecker}/>
+                <span class="font-bold">Vim</span>
 			</div>
 		</div>
 		<div class="grow">

@@ -1,9 +1,12 @@
 # Build image
-FROM node as build
+FROM node:20-slim as build
+
+RUN corepack enable
 
 WORKDIR /app
 COPY . .
-RUN npm ci && npm run build
+RUN pnpm install --frozen-lockfile
+RUN pnpm run build
 
 
 # Runtime image

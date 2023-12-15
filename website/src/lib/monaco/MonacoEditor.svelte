@@ -2,8 +2,10 @@
 	// Credits from this setup to https://www.codelantis.com/blog/sveltekit-monaco-editor.
 	import { onMount, onDestroy } from 'svelte';
 	import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
+    import { initVimMode } from 'monaco-vim';
 
 	let editor: Monaco.editor.IStandaloneCodeEditor;
+    let vim_mode: ReturnType<initVimMode> | null = null;
 	let monaco: typeof Monaco;
 	function getEditorValue() {
 		return editor.getValue();
@@ -22,8 +24,24 @@
 	}
 
 	function changeLanguage(language: string) {
-		monaco.editor.setModelLanguage(editor.getModel(), language);
+        const model = editor.getModel();
+        if (model !== null) {
+            monaco.editor.setModelLanguage(model, language);
+        }
 	}
+
+    function turnOnVimMode() {
+        if (vim_mode === null) {
+            vim_mode = initVimMode(editor);
+        }
+    }
+
+    function turnOffVimMode() {
+        if (vim_mode !== null) {
+            vim_mode.dispose();
+            vim_mode = null;
+        }
+    }
 
 	let editorContainer: HTMLElement;
 	let editorParent: HTMLDivElement;
@@ -66,7 +84,9 @@
 		setEditorValue,
 		getUnderlyingEditor,
 		onDidChangeContent,
-		changeLanguage
+		changeLanguage,
+        turnOnVimMode,
+        turnOffVimMode,
 	};
 </script>
 
