@@ -4,6 +4,7 @@
 	import Spinner from '$lib/Spinner.svelte';
 	import Modal from '$lib/Modal.svelte';
 	import { defaultPrograms } from '$lib/constants';
+	import { getSettings, setVimMode } from '$lib/settings';
 
 	interface ILanguage {
 		name: string;
@@ -34,6 +35,7 @@
 	let current_language = 'lua';
 	let showModal = false;
 	let lastUrl = '';
+	let vimChecker: HTMLInputElement;
 	const delay = 1000;
 
 	const compile = async () => {
@@ -128,8 +130,19 @@
 		return url;
 	};
 
+	const toggleVimMode = (e: Event) => {
+		const target = e.target as HTMLInputElement;
+		setVimMode(target.checked);
+		if (target.checked) {
+			editor.turnOnVimMode();
+		} else {
+			editor.turnOffVimMode();
+		}
+	};
+
 	onMount(() => {
 		window.addEventListener('editor-loaded', () => {
+			const settings = getSettings();
 			setEditorDebounce();
 			window.addEventListener('keydown', (e) => {
 				if (e.ctrlKey && e.key === 's') {
@@ -139,6 +152,11 @@
 				}
 			});
 			compile();
+
+			if (settings.vimMode) {
+				vimChecker.checked = true;
+				editor.turnOnVimMode();
+			}
 
 			// Check if we have a code in the URL.
 			// If not then check if we have a saved program in local storage.
@@ -200,6 +218,8 @@
 						lastUrl = createLink();
 					}}>Share</button
 				>
+				<input type="checkbox" name="vim-mode" on:change={toggleVimMode} bind:this={vimChecker} />
+				<span class="font-bold">Vim</span>
 			</div>
 		</div>
 		<div class="grow">
