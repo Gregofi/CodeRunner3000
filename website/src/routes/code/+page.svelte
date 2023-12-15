@@ -4,7 +4,7 @@
 	import Spinner from '$lib/Spinner.svelte';
 	import Modal from '$lib/Modal.svelte';
 	import { defaultPrograms } from '$lib/constants';
-    import { getSettings, setVimMode } from '$lib/settings';
+  import { getSettings, setVimMode } from '$lib/settings';
 
 	interface ILanguage {
 		name: string;
