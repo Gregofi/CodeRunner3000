@@ -1,0 +1,69 @@
+- name: cpp
+  compilers:
+  - name: gcc-trunk
+    path: /opt/evaluator/compilers/gcc-trunk/bin/g++
+  - name: gcc-bookworm
+    path: /usr/bin/g++
+  commands:
+  - cp ${SOURCE_FILE} source.c
+    # need to change the path otherwise gcc can't find 'ld'.
+  - ${COMPILER} ${COMPILER_ARGS} source.c
+  - rm source.c
+  - ./a.out
+
+- name: c
+  compilers:
+  - name: gcc-trunk
+    path: /opt/evaluator/compilers/gcc-trunk/bin/gcc
+  - name: gcc-bookworm
+    path: /usr/bin/gcc
+  commands:
+  - cp ${SOURCE_FILE} source.c
+    # need to change the path otherwise gcc can't find 'ld'.
+  - ${COMPILER} ${COMPILER_ARGS} source.c
+  - rm source.c
+  - ./a.out
+
+- name: lua
+  executors:
+  - name: lua5.4.6
+  - name: lua5.3.6
+  - name: lua5.2.4
+  - name: lua5.1.5
+  commands:
+  - "${EXECUTOR} ${EXECUTOR_ARGS} ${SOURCE_FILE} ${SOURCE_ARGS}"
+
+- name: python3
+  executors:
+  - name: python3-bookworm
+    path: /usr/bin/python3
+  commands:
+  - "${EXECUTOR} ${EXECUTOR_ARGS} ${SOURCE_FILE} ${SOURCE_ARGS}"
+
+- name: racket
+  executors:
+  - name: racket-bookworm
+    path: /usr/bin/racket
+  commands:
+  - "${EXECUTOR} ${EXECUTOR_ARGS} ${SOURCE_FILE} ${SOURCE_ARGS}"
+
+#- name: haskell
+#  compilers:
+#  - name: ghc-bookworm
+#    path: /usr/bin/ghc
+#  commands:
+#  - cp ${SOURCE_FILE} source.hs
+#  - ${COMPILER} source.hs
+#  - rm source.hs
+#  - ./a.out
+
+- name: rust
+  compilers:
+  - name: rustc-bookworm
+    path: /usr/bin/rustc
+  commands:
+  - cp ${SOURCE_FILE} source.rs
+  # specify the linker path, because debian has symlink /bin/cc -> /etc/alternatives/cc
+  - ${COMPILER} -C strip=symbols -C linker=/usr/bin/gcc source.rs
+  - rm source.rs
+  - ./source

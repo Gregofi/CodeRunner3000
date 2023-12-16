@@ -61,10 +61,10 @@ codes = [
 ]
 
 
-def test_eval_bash_valid_programs():
-    for code in codes:
-        response = requests.post(EVALUATOR_ADDRESS, json=generate_bash(code["code"]))
-        assert response.status_code == 200, code
-        values = response.json()
-        assert values["stdout"] == code["stdout"], code
-        assert values["stderr"].endswith(code["stderr"]), code
+# def test_eval_bash_valid_programs():
+#     for code in codes:
+#         response = requests.post(EVALUATOR_ADDRESS, json=generate_bash(code["code"]))
+#         assert response.status_code == 200, code
+#         values = response.json()
+#         assert values["stdout"] == code["stdout"], code
+#         assert values["stderr"].endswith(code["stderr"]), code

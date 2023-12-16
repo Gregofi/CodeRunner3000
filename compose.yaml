@@ -4,24 +4,21 @@ services:
     build: website
     expose:
       - 3000
-    networks:
-      - code-exec-nw
     depends_on:
       evaluator:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "localhost:3000"]
-      interval: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
+      start_interval: 1s
       start_period: 5s
 
   website-proxy:
     build: website_proxy
     environment:
       - WEBSITE_PROXY_NGINX_STATUS_TOKEN=super_secret # Change in prod!
-    networks:
-      - code-exec-nw
     ports:
       - 127.0.0.1:80:80
     depends_on:
@@ -30,49 +27,19 @@ services:
 
   evaluator:
     build: evaluator
-    depends_on:
-      dind:
-        condition: service_healthy
-    volumes:
-      - dind-certs-client:/certs/client
-      - code:/www/app/sources
+    # seems needed for nsjail
+    privileged: true
     environment:
-      - DOCKER_TLS_CERTDIR=/certs
-      - DOCKER_TLS_VERIFY=1
-      - DOCKER_CERT_PATH=/certs/client
-      - DOCKER_HOST=tcp://docker:2376
-    networks:
-      - dind-nw
-      - code-exec-nw
+      - RUST_LOG=debug
     healthcheck:
       test: ["CMD", "curl", "-f", "localhost:7800/liveness"]
-      interval: 15s
+      interval: 5s
       timeout: 10s
       retries: 5
-      start_period: 300s
-
-  dind:
-    build: dind
-    privileged: true
+      start_interval: 1s
+      start_period: 10s
     volumes:
-      - dind-certs-client:/certs/client
-      - dind-certs-ca:/certs/ca
-      - code:/www/app/sources
-    environment:
-      - DOCKER_TLS_CERTDIR=/certs
-    networks:
-      dind-nw:
-        aliases:
-          - docker
-    expose:
-#     - 2375 Do not expose the non TLS port
-      - 2376
-    healthcheck:
-      test: ["CMD", "docker", "info"]
-      interval: 3s
-      timeout: 5s
-      retries: 2
-      start_period: 300s
+      - /sys/fs/cgroup:/sys/fs/cgroup
 
   statserver:
     build: statserver
@@ -81,17 +48,3 @@ services:
       - WEBSITE_PROXY_NGINX_STATUS_TOKEN=super_secret # Change in prod!
     ports:
       - "127.0.0.1:9898:9898"
-    networks:
-      - code-exec-nw
-
-
-volumes:
-  dind-certs-client:
-  dind-certs-ca:
-  # A volume where all the submitted source codes
-  # are located.
-  code:
-
-networks:
-  dind-nw:
-  code-exec-nw:

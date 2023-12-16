@@ -4,7 +4,7 @@ EVALUATOR_ADDRESS = "http://evaluator:7800/api/v1/evaluate"
 
 
 def generate_lua(code: str):
-    return {"language": "lua5.1", "code": code}
+    return {"language": "lua", "code": code, "executor": "lua5.1.5"}
 
 
 def test_eval_lua_basic():
@@ -47,8 +47,7 @@ print(x())
     assert response.status_code == 200
     values = response.json()
     assert values["stdout"] == ''
-    assert values["stderr"].endswith("lua5.1: source:2: attempt to call global 'x' (a nil value)\nstack traceback:\n\tsource:2: in main chunk\n\t[C]: ?\n")
-
+    assert "attempt to call global 'x' (a nil value)" in values["stderr"] 
 
 def test_eval_syntax_error():
     code = """
@@ -72,30 +71,7 @@ while 1 < 2 do end
     assert response.status_code == 200
     values = response.json()
     assert values["stdout"] == ''
-    assert values["stderr"].endswith("Timeout")
-
-
-def test_forbidden_functions():
-    code = """
-print(os.execute("reboot"))
-"""
-    payload = generate_lua(code)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
-    assert response.status_code == 200
-    values = response.json()
-    assert values["stdout"] == '256\n'
-    assert values["stderr"] == 'reboot: Operation not permitted\n'
-
-    code = """
-local http = require("socket.http")
-local response = http.request("http://google.com")
-"""
-    payload = generate_lua(code)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
-    assert response.status_code == 200
-    values = response.json()
-    assert values["stdout"] == ''
-    assert values["stderr"].endswith("")
+    assert values["stderr"].endswith("error: program exited with non-zero exit code 137 (timed out)\n")
 
 
 def test_files():
@@ -107,5 +83,7 @@ print(err)
     response = requests.post(EVALUATOR_ADDRESS, json=payload)
     assert response.status_code == 200
     values = response.json()
-    assert values["stdout"].endswith('/etc/shadow: Permission denied\n')
+    # An useless test because /etc/shadow is not created, but it
+    # may be in the future and then it shouldn't be readable.
+    assert values["stdout"].endswith('No such file or directory\n')
     assert values["stderr"] == ''

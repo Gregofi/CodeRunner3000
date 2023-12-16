@@ -3,7 +3,7 @@ import requests
 EVALUATOR_ADDRESS = "http://evaluator:7800/api/v1/evaluate"
 
 def generate_cpp(code: str):
-    return {"language": "cpp23gcc", "code": code}
+    return {"language": "cpp", "code": code, "compiler": "gcc-bookworm"}
 
 def test_simple_cpp():
     payload = generate_cpp("""

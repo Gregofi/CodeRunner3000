@@ -16,16 +16,56 @@
 		editor_name: string;
 		// The text representation, what is shown in the dropdown.
 		text: string;
+		executors?: string[];
+		compilers?: string[];
+	}
+
+	interface IPayload {
+		code: string;
+		language: string;
+		executor?: string;
+		compiler?: string;
 	}
 
 	const languages: { [key in string]: ILanguage } = {
-		lua: { name: 'lua', server_name: 'lua5.1', editor_name: 'lua', text: 'Lua 5.1' },
-		python3: { name: 'python3', server_name: 'python3', editor_name: 'python', text: 'Python 3' },
-		racket: { name: 'racket', server_name: 'racket', editor_name: 'scheme', text: 'Racket' },
-		bash: { name: 'bash', server_name: 'bash', editor_name: 'shell', text: 'Bash' },
-		c: { name: 'c', server_name: 'c', editor_name: 'c', text: 'C' },
-		cpp23gcc: { name: 'cpp23gcc', server_name: 'cpp23gcc', editor_name: 'cpp', text: 'C++23 GCC' },
-		haskell: { name: 'haskell', server_name: 'haskell', editor_name: 'haskell', text: 'Haskell' }
+		lua: {
+			name: 'lua',
+			server_name: 'lua',
+			editor_name: 'lua',
+			text: 'Lua',
+			executors: ['lua5.4.6', 'lua5.3.6', 'lua5.2.4', 'lua5.1.5']
+		},
+		python3: {
+			name: 'python3',
+			server_name: 'python3',
+			editor_name: 'python',
+			text: 'Python 3',
+			executors: ['python3-bookworm']
+		},
+		// racket: { name: 'racket', server_name: 'racket', editor_name: 'scheme', text: 'Racket', executors: ["racket-bookworm"] },
+		// bash: { name: 'bash', server_name: 'bash', editor_name: 'shell', text: 'Bash', executors: ["bash"] },
+		c: {
+			name: 'c',
+			server_name: 'c',
+			editor_name: 'c',
+			text: 'C',
+			compilers: ['gcc-trunk', 'gcc-bookworm']
+		},
+		cpp: {
+			name: 'cpp',
+			server_name: 'cpp',
+			editor_name: 'cpp',
+			text: 'C++',
+			compilers: ['gcc-bookworm']
+		},
+		// haskell: { name: 'haskell', server_name: 'haskell', editor_name: 'Haskell', text: 'Haskell', compilers: ["ghc-bookworm"] },
+		rust: {
+			name: 'rust',
+			server_name: 'rust',
+			editor_name: 'rust',
+			text: 'Rust',
+			compilers: ['rustc-bookworm']
+		}
 	};
 
 	let stdout: HTMLElement;
@@ -34,21 +74,34 @@
 	let loading = false;
 	let timer: ReturnType<typeof setTimeout>;
 	let current_language = 'lua';
+	let current_executor: string | undefined;
+	let current_compiler: string | undefined;
 	let showModal = false;
 	let lastUrl = '';
 	let vimChecker: HTMLInputElement;
 	const delay = 1000;
 
-	const compile = async () => {
+	const createPayload = (): IPayload => {
 		const code = editor.getEditorValue();
+		const language = languages[current_language];
+		const payload: IPayload = {
+			code,
+			language: language.server_name,
+			// the current_x stays even when changing to language that
+			// has no compiler/interpreter, so chech if the language even
+			// needs interpreter/compiler.
+			compiler: language.compilers ? current_compiler : undefined,
+			executor: language.executors ? current_executor : undefined
+		};
+		return payload;
+	};
+
+	const compile = async () => {
 		loading = true;
-		const language = languages[current_language].server_name;
+		const body = JSON.stringify(createPayload());
 		const response = await fetch('/api/code-eval', {
 			method: 'POST',
-			body: JSON.stringify({
-				code,
-				language
-			}),
+			body,
 			mode: 'cors',
 			headers: {
 				'Content-Type': 'application/json',
@@ -111,6 +164,8 @@
 	};
 
 	const languageChange = () => {
+		current_compiler = languages[current_language].compilers?.[0];
+		current_executor = languages[current_language].executors?.[0];
 		const language = languages[current_language].editor_name;
 		editor.changeLanguage(language);
 		const loaded = loadFromLocalStorage();
@@ -120,10 +175,9 @@
 	};
 
 	const createLink = () => {
-		const code = editor.getEditorValue();
-		const language = current_language;
 		const urlParams = new URLSearchParams();
-		urlParams.set('input', btoa(JSON.stringify({ code, language })));
+		const payload = createPayload();
+		urlParams.set('input', btoa(JSON.stringify(payload)));
 		const url = `${window.location.origin}${window.location.pathname}?${urlParams.toString()}`;
 		if (url.length > 2000) {
 			console.log('URL too long, might not be supported by some browsers.');
@@ -168,6 +222,8 @@
 				const code = input.code;
 				const language = input.language;
 				if (code && language && languages[language] !== undefined) {
+					current_executor = input.exec_opts?.executor;
+					current_compiler = input.compiler_opts?.compiler;
 					current_language = language;
 					languageChange();
 					editor.setEditorValue(code);
@@ -206,6 +262,20 @@
 					<option value={language.name}>{language.text}</option>
 				{/each}
 			</select>
+			{#if languages[current_language].executors?.length > 0}
+				<select bind:value={current_executor} name="executor" class="ml-2">
+					{#each languages[current_language].executors as executor}
+						<option value={executor}>{executor}</option>
+					{/each}
+				</select>
+			{/if}
+			{#if languages[current_language].compilers?.length > 0}
+				<select bind:value={current_compiler} name="compiler" class="ml-2">
+					{#each languages[current_language].compilers as compiler}
+						<option value={compiler}>{compiler}</option>
+					{/each}
+				</select>
+			{/if}
 			<button
 				class="btn"
 				on:click={() => {

@@ -10,8 +10,6 @@ There are be multiple components:
 - Website = The frontend for the project.
 - Website Proxy = A proxy to which all traffic goes before the website.
 - Evaluator = Manages the logic behind spawning new containers in which code runs.
-- dind = Uses Docker in Docker to run the new containers where code is
-  evaluated, all reqeusts to Docker daemon from evaluator land here.
 - statserver = Collects prometheus metrics from apps `/metrics` endpoint,
   aggregates them and serves them at its `/metrics` enpoint.
 
