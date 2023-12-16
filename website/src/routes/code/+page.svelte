@@ -198,29 +198,22 @@
 
 <div class="flex flex-row max-xl:flex-col grow">
 	<div class="border border-gray-300 grow flex flex-col">
-		<div class="ml-2 h-10 flex items-center">
-			<div>
-				<button class="btn btn-blue" on:click={compile}>Run (Ctrl+S)</button>
-				<select
-					bind:value={current_language}
-					on:change={languageChange}
-					name="language"
-					class="ml-2"
-				>
-					{#each Object.values(languages) as language}
-						<option value={language.name}>{language.text}</option>
-					{/each}
-				</select>
-				<button
-					class="btn"
-					on:click={() => {
-						showModal = true;
-						lastUrl = createLink();
-					}}>Share</button
-				>
-				<input type="checkbox" name="vim-mode" on:change={toggleVimMode} bind:this={vimChecker} />
-				<span class="font-bold">Vim</span>
-			</div>
+		<div class="ml-2 h-10 flex items-center overflow-x-auto">
+			<button class="btn btn-blue whitespace-nowrap" on:click={compile}>Run (Ctrl+S)</button>
+			<select bind:value={current_language} on:change={languageChange} name="language" class="ml-2">
+				{#each Object.values(languages) as language}
+					<option value={language.name}>{language.text}</option>
+				{/each}
+			</select>
+			<button
+				class="btn"
+				on:click={() => {
+					showModal = true;
+					lastUrl = createLink();
+				}}>Share</button
+			>
+			<input type="checkbox" name="vim-mode" on:change={toggleVimMode} bind:this={vimChecker} />
+			<span class="font-bold">Vim</span>
 		</div>
 		<div class="grow">
 			<MonacoEditor bind:this={editor} />
