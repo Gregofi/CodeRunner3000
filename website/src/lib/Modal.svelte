@@ -21,7 +21,11 @@
 		<slot />
 		<hr />
 		<!-- svelte-ignore a11y-autofocus -->
-		<button autofocus on:click={() => dialog.close()}>close</button>
+		<button
+			class="mt-2 mx-auto py-1 w-full bg-gray-500 text-white"
+			autofocus
+			on:click={() => dialog.close()}>Close</button
+		>
 	</div>
 </dialog>
 

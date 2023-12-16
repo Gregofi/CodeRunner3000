@@ -213,7 +213,7 @@
 				}}>Share</button
 			>
 			<input type="checkbox" name="vim-mode" on:change={toggleVimMode} bind:this={vimChecker} />
-			<span class="font-bold">Vim</span>
+			<span class="font-bold ml-1">Vim</span>
 		</div>
 		<div class="grow">
 			<MonacoEditor bind:this={editor} />
@@ -247,6 +247,9 @@
 	<div slot="header">
 		<h1 class="text-xl font-bold">Share</h1>
 	</div>
+	<p>Please keep in mind that this feature is still in alpha and subject to change.</p>
+	<p>This means that the code might not work in the future.</p>
+	<br />
 	<p>Use the following link to share your code:</p>
 	<input class="border w-96 p-1 rounded-lg" type="text" value={lastUrl} readonly />
 	<button
@@ -257,7 +260,7 @@
 		}}>Copy to clipboard</button
 	>
 	{#if lastUrl.length > 2048}
-		<p class="text-red-500">Warning: URL too long, might not be supported by some browsers.</p>
+		<p class="text-red-500">Warning: URL is too long, might not be supported by some browsers.</p>
 	{/if}
 </Modal>
 
@@ -273,7 +276,7 @@
 	}
 
 	.btn {
-		@apply font-bold py-2 px-4 rounded;
+		@apply font-bold py-2 px-4;
 	}
 	.btn-blue {
 		@apply bg-green-700 text-white;
