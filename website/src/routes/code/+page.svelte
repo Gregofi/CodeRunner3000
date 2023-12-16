@@ -24,7 +24,8 @@
 		racket: { name: 'racket', server_name: 'racket', editor_name: 'scheme', text: 'Racket' },
 		bash: { name: 'bash', server_name: 'bash', editor_name: 'shell', text: 'Bash' },
 		c: { name: 'c', server_name: 'c', editor_name: 'c', text: 'C' },
-		cpp23gcc: { name: 'cpp23gcc', server_name: 'cpp23gcc', editor_name: 'cpp', text: 'C++23 GCC' }
+		cpp23gcc: { name: 'cpp23gcc', server_name: 'cpp23gcc', editor_name: 'cpp', text: 'C++23 GCC' },
+		haskell: { name: 'haskell', server_name: 'haskell', editor_name: 'haskell', text: 'Haskell' }
 	};
 
 	let stdout: HTMLElement;
