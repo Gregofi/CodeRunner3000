@@ -93,3 +93,23 @@
       stdout: "stdout.txt"
       stderr: "stderr.txt"
 
+- name: haskell
+  run_options:
+    memory_limit: 512m
+    cpus_limit: 1
+    pids_limit: 32
+    storage_limit: 64m
+  packages: ["ghc", "musl-dev"]
+  steps:
+    - name: "rename"
+      command: ["mv", "source", "source.hs"]
+      timeout: 1
+    - name: "compile"
+      command: ["ghc", "source.hs", "-o", "/home/evaluator_nobody/source.exe"]
+      timeout: 5
+      stderr: "stderr.txt"
+    - name: "execute"
+      command: ["/home/evaluator_nobody/source.exe"]
+      timeout: 5
+      stdout: "stdout.txt"
+      stderr: "stderr.txt"

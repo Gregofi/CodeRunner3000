@@ -65,5 +65,8 @@ export const defaultPrograms: IPrograms = {
 		'    std::cout << fact(5) << "\\n";',
 		'    return 0;',
 		'}'
-	].join('\n')
+	].join('\n'),
+	haskell: ['fact 0 = 1', 'fact n = n * fact (n - 1)', '', 'main = putStrLn $ show $ fact 5'].join(
+		'\n'
+	)
 };
