@@ -68,5 +68,18 @@ export const defaultPrograms: IPrograms = {
 	].join('\n'),
 	haskell: ['fact 0 = 1', 'fact n = n * fact (n - 1)', '', 'main = putStrLn $ show $ fact 5'].join(
 		'\n'
-	)
+	),
+	rust: [
+		'fn fact(n: u64) -> u64 {',
+		'    if n == 0 {',
+		'        1',
+		'    } else {',
+		'        n * fact(n - 1)',
+		'    }',
+		'}',
+		'',
+		'fn main() {',
+		'    println!("{}", fact(5));',
+		'}'
+	].join('\n')
 };

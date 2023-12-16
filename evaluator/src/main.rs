@@ -1,9 +1,12 @@
-mod docker;
+mod nsjail;
 mod spec;
-use metrics::{counter, describe_counter, describe_gauge, Label};
+use dotenv::dotenv;
+use metrics::{counter, describe_counter, describe_gauge};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
-use spec::{ExecutionStep, RunOptions, RunSpec};
+use spec::RunSpec;
+
+use log::debug;
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -11,8 +14,6 @@ use std::io::prelude::*;
 use std::net::SocketAddr;
 use std::str;
 use std::sync::atomic::AtomicUsize;
-
-use tokio::time::sleep;
 
 use rand::{distributions::Alphanumeric, Rng};
 
@@ -25,7 +26,23 @@ use serde::{Deserialize, Serialize};
 
 use lazy_static::lazy_static;
 
+const EXECUTOR_REPLACE: &str = "${EXECUTOR}";
+const EXECUTOR_ARGS_REPLACE: &str = "${EXECUTOR_ARGS}";
+const SOURCE_FILE_REPLACE: &str = "${SOURCE_FILE}";
+const SOURCE_ARGS_REPLACE: &str = "${SOURCE_ARGS}";
+const COMPILER_REPLACE: &str = "${COMPILER}";
+const COMPILER_ARGS_REPLACE: &str = "${COMPILER_ARGS}";
+const SOURCE_FILE_NAME: &str = "source";
+const ID_LENGTH: usize = 32;
+const MAX_OUTPUT_LENGTH: usize = 1024 * 1024; // 1MB
+
 lazy_static! {
+    static ref WORKDIR: String =
+        std::env::var("EVALUATOR_WORKDIR").unwrap_or_else(|_| "/opt/evaluator/sources".to_string());
+    static ref CONFIG_PATH: String = std::env::var("EVALUATOR_CONFIG_PATH")
+        .unwrap_or_else(|_| "/opt/evaluator/config".to_string());
+    static ref COMPILERS_PATH: String = std::env::var("EVALUATOR_COMPILERS_PATH")
+        .unwrap_or_else(|_| "/opt/evaluator/compilers".to_string());
     static ref LUA_REQUEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
     static ref PROMETHEUS: PrometheusHandle = PrometheusBuilder::new()
         .install_recorder()
@@ -34,12 +51,23 @@ lazy_static! {
         initialize_configs().expect("Failed to initialize configs");
 }
 
-const EVAL_FOLDER: &str = "/evaluator/mounted";
-const TIMEOUT_CODE: u8 = 224;
-
 #[derive(Serialize, Deserialize, Debug)]
 struct RequestPayload {
     language: String,
+
+    compiler: Option<String>,
+    #[serde(default)]
+    compiler_args: Vec<String>,
+
+    executor: Option<String>,
+    #[serde(default)]
+    executor_args: Vec<String>,
+
+    #[serde(default)]
+    program_args: Vec<String>,
+
+    stdin: Option<String>,
+
     code: String,
 }
 
@@ -51,172 +79,158 @@ struct ResponsePayload {
 
 #[allow(dead_code)]
 struct EvalResult {
-    exit_code: u8,
-    container_stdout: Option<String>,
-    container_stderr: Option<String>,
+    exit_code: i32,
+    stdout: Option<String>,
+    stderr: Option<String>,
 }
 
-fn random_filename() -> String {
+struct ExecuteResult {
+    #[allow(dead_code)]
+    exit_code: i32,
+    stdout: String,
+    stderr: String,
+}
+
+/// Generates random id
+fn random_id(length: usize) -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
-        .take(128)
+        .take(length)
         .map(char::from)
         .collect()
 }
 
-fn get_run_options(runspec: &RunSpec, execution_step: &ExecutionStep) -> Result<RunOptions> {
-    match &execution_step.run_options {
-        Some(run_options) => Ok(run_options.clone()),
-        None => runspec
-            .run_options
-            .clone()
-            .ok_or(anyhow!("No run options provided!")),
-    }
+fn escape_args(args: &[String]) -> Vec<String> {
+    args.iter()
+        .map(|arg| format!("'{}'", arg))
+        .collect::<Vec<String>>()
 }
 
-async fn do_one_step(
-    step: &ExecutionStep,
-    run_spec: &RunSpec,
-    eval_id: &str,
-) -> Result<EvalResult> {
-    println!("Running '{}' step with eval_id ID {}", step.name, eval_id);
-    // The path to the sources must be inside the DIND container,
-    // not this one!
-    println!("/www/app/sources/{}/{}", run_spec.name, eval_id);
-    let image = format!("{}-{}", run_spec.name, "runtime");
-    let run_options = get_run_options(run_spec, step)?;
-    let start = std::time::Instant::now();
-    let mut command = vec![
-        "/evaluator/evaluate.sh".to_string(),
-        step.stdout.clone().unwrap_or("/dev/null".to_string()),
-        step.stderr.clone().unwrap_or("/dev/null".to_string()),
-    ];
-    command.append(&mut step.command.clone());
-
-    let container_id = docker::docker_run(&docker::DockerRunSpec {
-        image,
-        volumes: vec![
-            format!(
-                "/www/app/sources/{}/{}:{}",
-                run_spec.name, eval_id, EVAL_FOLDER
-            ),
-            format!("{}:{}", eval_id, "/home/evaluator_nobody"),
-        ],
-        env: vec![],
-        ports: vec![],
-        memory: run_options.memory_limit.clone(),
-        cpus: run_options.cpus_limit,
-        pids_limit: run_options.pids_limit,
-        command,
-        network: "none".to_string(),
-    })?
-    .container_id;
-
-    println!("Running container with ID '{}'", container_id);
-
-    // An asynchronous sleep, wait until the task finishes and hand out execution
-    // to other tasks.
-    let mut timeout = false;
-    let mut state = docker::ImageState::load_from(container_id.as_str())?;
-    while state.running {
-        let delta = start.elapsed();
-        if delta.as_secs() >= step.timeout as u64 {
-            println!("Timeout on step {}", step.name);
-            timeout = true;
-            break;
-        }
-
-        sleep(tokio::time::Duration::from_millis(50)).await;
-
-        state = docker::ImageState::load_from(container_id.as_str())
-            .context("Could not get docker image state")?;
+fn replace_variable(command: &str, variable: &str, value: &str) -> Result<String> {
+    if str::find(command, variable).is_none() {
+        bail!("Variable {} is not present in the command", variable);
     }
 
-    if timeout {
-        docker::docker_kill(container_id.as_str()).context("Could not kill docker container")?;
-    }
+    Ok(str::replace(command, variable, value))
+}
 
-    let container_log =
-        docker::docker_logs(container_id.as_str()).context("Could not fetch docker logs")?;
-    docker::docker_rm(container_id.as_str()).context("Unable to remove container")?;
-
-    println!("Image state: {:?}", state);
-
-    if timeout {
-        Ok(EvalResult {
-            exit_code: TIMEOUT_CODE,
-            container_stdout: None,
-            container_stderr: None,
-        })
+fn truncate_output(output: &str) -> String {
+    if output.len() > MAX_OUTPUT_LENGTH {
+        format!(
+            "{} ... (truncated {} bytes)",
+            &output[..MAX_OUTPUT_LENGTH],
+            output.len() - MAX_OUTPUT_LENGTH
+        )
     } else {
-        Ok(EvalResult {
-            exit_code: state.exit_code,
-            container_stdout: Some(container_log.stdout),
-            container_stderr: Some(container_log.stderr),
-        })
+        output.to_string()
     }
 }
 
-async fn run_spec(spec: &RunSpec, eval_id: &str) -> Result<ResponsePayload> {
-    counter!(
-        "evaluator_requests",
-        1,
-        vec![Label::new("language", spec.name.clone())]
-    );
-    docker::create_volume(eval_id).context("Unable to create volume")?;
+async fn execute(spec: &RunSpec, payload: &RequestPayload, eval_id: &str) -> Result<ExecuteResult> {
+    // TODO: memory, cpu etc. limits are set by the config,
+    // but allow the user to override them.
 
-    for step in &spec.steps {
-        let res = do_one_step(step, spec, eval_id).await?;
-        println!(
-            "Step '{}' finished with exit code {}",
-            step.name, res.exit_code
-        );
-        if res.exit_code != 0 {
-            counter!(
-                "evaluator_errors",
-                1,
-                vec![Label::new("language", spec.name.clone())]
-            );
-            println!(
-                "Step '{}' failed with exit code {}, stderr: {}",
-                step.name,
-                res.exit_code,
-                res.container_stderr.unwrap_or("No logs".to_string())
-            );
-            let stderr = if res.exit_code == TIMEOUT_CODE {
-                "Timeout".to_string()
-            } else {
-                let stderr = fs::read_to_string(format!(
-                    "/www/app/sources/{}/{}/{}",
-                    spec.name, eval_id, "stderr.txt"
-                ))
-                .unwrap_or("".to_string());
-                format!(
-                    "Step '{}' failed with exit code {}\n{}",
-                    step.name, res.exit_code, stderr
-                )
-            };
-            return Ok(ResponsePayload {
-                stdout: "".to_string(),
-                stderr,
-            });
-        }
+    let compiler_args = escape_args(&payload.compiler_args);
+    let executor_args = escape_args(&payload.executor_args);
+    let program_args = escape_args(&payload.program_args);
+
+    let source_folder = format!("{}/{}/{}", *WORKDIR, spec.name, eval_id);
+    let source_file = format!("{}/{}", source_folder, SOURCE_FILE_NAME);
+
+    let command = spec.commands.join(" && ");
+
+    if str::find(&command, EXECUTOR_REPLACE).is_some() && payload.executor.is_none() {
+        bail!("Executor not provided in payload.");
     }
 
-    docker::remove_volume(eval_id).context("Removing volume failed")?;
+    if str::find(&command, COMPILER_REPLACE).is_some() && payload.compiler.is_none() {
+        bail!("Compiler not provided in payload.");
+    }
 
-    let stdout = fs::read_to_string(format!(
-        "/www/app/sources/{}/{}/{}",
-        spec.name, eval_id, "stdout.txt"
-    ))
-    .unwrap_or("".to_string());
-    let stderr = fs::read_to_string(format!(
-        "/www/app/sources/{}/{}/{}",
-        spec.name, eval_id, "stderr.txt"
-    ))
-    .unwrap_or("".to_string());
+    // Substitute variables in the command
 
-    Ok(ResponsePayload { stdout, stderr })
+    let mut command = command
+        .replace(EXECUTOR_ARGS_REPLACE, &executor_args.join(" "))
+        .replace(SOURCE_FILE_REPLACE, source_file.as_str())
+        .replace(SOURCE_ARGS_REPLACE, &program_args.join(" "))
+        .replace(COMPILER_ARGS_REPLACE, &compiler_args.join(" "));
+
+    if payload.executor.is_some() {
+        let executor = payload.executor.as_ref().unwrap();
+        let executor_spec = &spec
+            .executors
+            .iter()
+            .find(|e| e.name == *executor)
+            .with_context(|| format!("Executor '{}' not found", executor))?;
+        let executor_path = match &executor_spec.path {
+            Some(path) => path.to_owned(),
+            None => format!("{}/{}/{}", *COMPILERS_PATH, spec.name, executor_spec.name),
+        };
+        command = replace_variable(&command, EXECUTOR_REPLACE, &executor_path)?;
+    }
+
+    if payload.compiler.is_some() {
+        let compiler = payload.compiler.as_ref().unwrap();
+        let compiler_spec = &spec
+            .compilers
+            .iter()
+            .find(|c| c.name == *compiler)
+            .with_context(|| format!("Compiler '{}' not found", compiler))?;
+        let compiler_path = match &compiler_spec.path {
+            Some(path) => path.to_owned(),
+            None => format!("{}/{}/{}", *COMPILERS_PATH, spec.name, compiler_spec.name),
+        };
+        debug!("Using compiler path {}", compiler_path);
+        command = replace_variable(&command, COMPILER_REPLACE, &compiler_path)?;
+    }
+
+    // Compose the command together and run it
+
+    let bash_wrapper = vec!["/bin/bash".to_string(), "-c".to_string(), command];
+    debug!("Running command {:?} in jail", bash_wrapper);
+
+    let nsjail = nsjail::NsJailConfig::new()
+        .config(format!("{}/userspace.cfg", *CONFIG_PATH).as_str())
+        .readonly_bind(source_folder.as_str(), source_folder.as_str());
+    let mut cmd = nsjail.run(bash_wrapper);
+    let output = cmd.output()?;
+
+    let stdout = truncate_output(&String::from_utf8(output.stdout)?);
+    let mut stderr = truncate_output(&String::from_utf8(output.stderr)?);
+    let exit_code = output.status.code().unwrap();
+
+    let timeout_message = if exit_code == 137 { " (timed out)" } else { "" };
+
+    if exit_code != 0 {
+        stderr = format!(
+            "{} {}{}\n{}",
+            "error: program exited with non-zero exit code", exit_code, timeout_message, stderr
+        );
+    }
+
+    debug!(
+        "Command exited with code {}, stdout: '{}', stderr: '{}'",
+        exit_code, stdout, stderr
+    );
+
+    Ok(ExecuteResult {
+        exit_code,
+        stdout,
+        stderr,
+    })
+}
+
+async fn run_spec(
+    spec: &RunSpec,
+    payload: &RequestPayload,
+    eval_id: &str,
+) -> Result<ResponsePayload> {
+    let execute_result = execute(spec, payload, eval_id).await?;
+
+    Ok(ResponsePayload {
+        stdout: execute_result.stdout,
+        stderr: execute_result.stderr,
+    })
 }
 
 async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body>> {
@@ -229,25 +243,25 @@ async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body
     let body_bytes = hyper::body::to_bytes(req.into_body()).await?;
     let body = String::from_utf8(body_bytes.to_vec())?;
 
-    let data: RequestPayload = match content_type.as_str() {
+    let payload: RequestPayload = match content_type.as_str() {
         "application/json" => serde_json::from_str(&body)?,
         _ => bail!("Unsupported content type"),
     };
 
     let runspec = CONFIG
-        .get(&data.language)
-        .ok_or_else(|| anyhow!("No such language {}.", data.language))?;
+        .get(&payload.language)
+        .ok_or_else(|| anyhow!("No such language {}.", payload.language))?;
 
-    let folder_name = random_filename();
-    let path_str = format!("/www/app/sources/{}/{}/source", runspec.name, folder_name,);
+    let execution_id = random_id(ID_LENGTH);
+    let path_str = format!("{}/{}/{}/source", *WORKDIR, runspec.name, execution_id,);
     let path = std::path::Path::new(&path_str);
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).unwrap();
 
     let mut file = File::create(path)?;
-    file.write_all(data.code.as_bytes())?;
+    file.write_all(payload.code.as_bytes())?;
 
-    let result = run_spec(runspec, &folder_name).await?;
+    let result = run_spec(runspec, &payload, &execution_id).await?;
 
     fs::remove_dir_all(prefix).context("Could not remove source folder")?;
 
@@ -289,7 +303,7 @@ async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
 }
 
 fn initialize_configs() -> Result<HashMap<String, RunSpec>> {
-    let config = "/www/app/images/config.yaml";
+    let config = format!("{}/config.yaml", *CONFIG_PATH);
     let config = fs::read_to_string(config)?;
     let config: Vec<RunSpec> = serde_yaml::from_str(&config)?;
     Ok(config.into_iter().fold(HashMap::new(), |mut acc, spec| {
@@ -298,29 +312,11 @@ fn initialize_configs() -> Result<HashMap<String, RunSpec>> {
     }))
 }
 
-fn prepare_images() -> Result<()> {
-    for (_, spec) in CONFIG.iter() {
-        if spec.packages.is_some() {
-            docker::docker_build(&docker::DockerBuildSpec {
-                dockerfile: docker::Dockerfile::Stdin(format!(
-                    r#"FROM base-runtime-alpine
-                       RUN apk add --no-cache {}"#,
-                    spec.packages.clone().unwrap().join(" ")
-                )),
-                context: ".".to_string(),
-                tag: format!("{}-runtime", spec.name),
-            })?;
-        }
-    }
-
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("Preparing images...");
-    prepare_images()?;
-    println!("Images preparation done");
+    dotenv().ok();
+    env_logger::init();
+    fs::create_dir_all(&*WORKDIR).expect("Failed to create workdir");
 
     describe_gauge!(
         "total_connections_active",
