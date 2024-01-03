@@ -6,7 +6,6 @@
     path: /usr/bin/g++
   commands:
   - cp ${SOURCE_FILE} source.c
-    # need to change the path otherwise gcc can't find 'ld'.
   - ${COMPILER} ${COMPILER_ARGS} source.c
   - rm source.c
   - ./a.out
@@ -19,7 +18,6 @@
     path: /usr/bin/gcc
   commands:
   - cp ${SOURCE_FILE} source.c
-    # need to change the path otherwise gcc can't find 'ld'.
   - ${COMPILER} ${COMPILER_ARGS} source.c
   - rm source.c
   - ./a.out
