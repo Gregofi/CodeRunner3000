@@ -19,9 +19,12 @@ When running the app locally, you can use the docker compose provided. However,
 for developing the website, you probably want to develop it outside of a
 container, to have hot-reloading and such.
 
-If you do not need the backend code evaluator, you can just use `npm run dev`.
-If you do, then do `docker compose up evaluator dind` and find its IP via
-`docker inspect coderunner3000-evaluator-1`. This goes into `website/.env`.
+You can also run the evaluator locally, but then you need to have the compilers and interpreters
+that you want to use match the config. The address of the evaluator needs to be
+placed into `website/.env`, if you want the website to connect to the evaluator.
+
+Alternatively, you can just run `docker compose up --build` and have it all without any work,
+but it will be slower.
 
 ## Tests
 Some of the components have unit tests, which can be run dependent on the technology
