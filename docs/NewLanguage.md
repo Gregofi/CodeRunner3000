@@ -1,60 +1,101 @@
 # Adding new language
 
-## Evaluator
-The evaluator runs the user code in a fresh docker container, which exist only
-for the purpose of running users program. When the program finished, the container
-and the corresponding volume is deleted.
+You need to edit two components to add a new language. To understand the
+format, the following context about how requests to the evaluator looks can
+help. Requests to the evaluator are JSONs in the following format:
 
-Running a program for one language might require multiple steps to be taken.
-For example compiled languages require to first compile the program and then to
-execute it. Each of these steps are done in a fresh docker container. However,
-to be able to persist some file between those, a directory
-`/home/evaluator_nobody` is mounted onto a special volume which exists for all
-steps. Files in this directory are carried over to the next stages. The
-directory also contains the users code, which is in a file named `source`.
-
-If you want the output of the command to be send back from the evaluator,
-specify the items `stdout` and `stderr` to point to files `stdout.txt` and
-`stderr.txt` respectively. Additional stages will always append to those files.
-For each stage, specify a `name` (for logging) and a `command` which will run
-in that stage. Also specify a `timeout` in seconds (default is five seconds).
-
-As of now, all containers share the same packages. To install packages (for
-example `gcc` for C) use the `packages` array in the top configuration.
-
-The configs are in the `config.yaml` file, an example for C:
-```yaml
-- name: c
-  run_options:
-    memory_limit: 128m
-    cpus_limit: 0.25
-    pids_limit: 8
-    storage_limit: 64m
-  packages: ["gcc", "musl-dev"]
-  steps:
-    - name: "compile"
-      command: ["gcc", "-O2", "-x", "c", "source", "-o", "/home/evaluator_nobody/source.exe"]
-      timeout: 1
-      stdout: "stdout.txt"
-      stderr: "stderr.txt"
-    - name: "execute"
-      command: ["/home/evaluator_nobody/source.exe"]
-      timeout: 5
-      stdout: "stdout.txt"
-      stderr: "stderr.txt"
-```
-
-## Website
-The website needs to have a default value for editor `MonacoEditor.svelte` and
-need to have specified names, which are in the `routes/code/+page.svelte`.
-An example:
-```javascript
+```json
 {
-    cpp23gcc: {
-        name: 'cpp23gcc', // The name used for frontend logging
-        server_name: 'cpp23gcc', // Send to the backend, should be same as `name` in the yaml file
-        editor_name: 'cpp', // Used to pass to the monaco editor
-        text: 'C++23 GCC' // Displayed name in the dropdown
-    }
+    "name": "lua",
+    "executor": "lua5.3.6",
+    "code": "print(\"Hello, World!\")"
 }
 ```
+
+They may also be a `"compiler"` member.
+
+## Evaluator
+
+An example of configuration for the _Lua_ programming language:
+```yaml
+- name: lua
+  executors:
+  - name: lua5.4.6
+  - name: lua5.3.6
+  - name: lua5.2.4
+  - name: lua5.1.5
+  commands:
+  - "${EXECUTOR} ${EXECUTOR_ARGS} ${SOURCE_FILE} ${SOURCE_ARGS}"
+```
+
+another example for _C_:
+
+```yaml
+- name: c
+  compilers:
+  - name: gcc-trunk
+    path: /opt/evaluator/compilers/gcc-trunk/bin/gcc
+  - name: gcc-bookworm
+    path: /usr/bin/gcc
+  commands:
+  - cp ${SOURCE_FILE} source.c
+  - ${COMPILER} ${COMPILER_ARGS} source.c
+  - rm source.c
+  - ./a.out
+```
+
+Fields:
+- `name`: The identifying name of the action, the payload in requests will use this name.
+- `commands`: Series of commands that will be used on the users code.
+- `compilers` (optional): Supported compilers the evaluator can use.
+    - `name`: Name of the compiler, the evaluator will match incoming payload
+      against this name. If no executors matches, the server will return an
+      error.
+    - `path`: Path to the compiler. If not specified then the evaluator will
+      search in `/opt/evaluator/compilers/<name>`
+- `executors` (optional): Supported executors (interpreters) the evaluator can use.
+    - Same fields and meaning as compiler.
+
+The command has some values that will be substituted. Although they look like
+environment variables, they are not and simple find and replace is performed
+before the command is executed.
+- `${SOURCE_FILE}` - Path to a source file which contains the users code from
+  the payload. The file is not in current PWD and is read-only.
+- ${SOURCE_ARGS}` - Command line arguments to the users code.
+- `${EXECUTOR}` - The executor in the payload.
+- `${EXECUTOR_ARGS}` - Arguments to the executor (for example to run `python3`
+  with some additional flag).
+- `${COMPILER}` and ${COMPILER_ARGS} - Same meaning as executor, but for
+  `compiler`.
+
+Configs are located in `/evaluator/config/config.yaml`.
+
+### Getting the compiler/interpreter.
+
+Some languages use the easy way and just install the compiler/interpreter via
+`apt`. We do it with GCC, look at the example `gcc-bookworm`. If you want to
+have specific version, then you would have to build it/download it, and put it
+into the Evaluator docker image. We do this for Lua, you  can inspire yourself
+from there. If you do install it by yourself, please try putting all necessary
+code into `/opt/evaluator/compilers` (even if it is an interpreter).
+
+Keep in mind that all commands run from jail (using `nsjail`). Sometimes, some
+commands needs some folder or such that is not available, and it may take some
+debugging to make it work. You can run the `nsjail` with production conf. by
+doing `nsjail --config evaluator/config/userspace.cfg`. Edit the timelimit and
+remove the logging line to ease debugging.
+
+## Website
+
+The website also has several places which will have to be edited.
+In the `website/src/routes/code/+page.svelte`, there is an object containing
+the definitions for each language.
+- `name`: Used mainly for debugging and such.
+- `server_name`: This will be sent as `name` in the payload.
+- `editor_name`: The name that Monaco Editor uses for the language, see Monaco
+  Editor documentation.
+- `text`: What is displayed in the dropdown menu in the website.
+- `executors`: Possible executors, should be the same as in the evaluator.
+
+Then, add a new default program for the language in
+`website/src/lib/defaultPrograms.ts`.

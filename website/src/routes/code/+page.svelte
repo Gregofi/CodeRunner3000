@@ -3,7 +3,7 @@
 	import MonacoEditor from '$lib/monaco/MonacoEditor.svelte';
 	import Spinner from '$lib/Spinner.svelte';
 	import Modal from '$lib/Modal.svelte';
-	import { defaultPrograms } from '$lib/constants';
+	import { defaultPrograms } from '$lib/defaultPrograms';
 	import { getSettings, setVimMode } from '$lib/settings';
 
 	interface ILanguage {
