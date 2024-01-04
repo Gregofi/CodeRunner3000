@@ -25,6 +25,10 @@
 		language: string;
 		executor?: string;
 		compiler?: string;
+		executor_args?: string[];
+		compiler_args?: string[];
+		program_args?: string[];
+		stdin?: string;
 	}
 
 	const languages: { [key in string]: ILanguage } = {
@@ -126,6 +130,8 @@
 		localStorage.setItem('saved_programs', JSON.stringify(programs));
 	};
 
+	/// Tries to load saved program from local storage and inserts it
+	/// into the editor, if so it returns true. Returns false otherwise.
 	const loadFromLocalStorage = () => {
 		const savedCode = localStorage.getItem('saved_programs');
 		if (savedCode) {
@@ -229,11 +235,11 @@
 					editor.setEditorValue(code);
 				}
 			} else {
+				// And overwrite it with the saved program if it exists.
 				const loadedFromLocal = loadFromLocalStorage();
 				if (!loadedFromLocal) {
 					renderDefaultCode();
 				}
-				// And overwrite it with the saved program if it exists.
 			}
 		});
 	});
