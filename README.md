@@ -26,6 +26,8 @@ placed into `website/.env`, if you want the website to connect to the evaluator.
 Alternatively, you can just run `docker compose up --build` and have it all without any work,
 but it will be slower.
 
+You might need to create new cgroup user named `NSJAIL`, or create folders in `<cgroup-folder>/pids/NSJAIL` and `<cgroup-folder>/cpu/NSJAIL`.
+
 ## Tests
 Some of the components have unit tests, which can be run dependent on the technology
 used in the component, for example Evaluator uses `cargo test`, while website might use
