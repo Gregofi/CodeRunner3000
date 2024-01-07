@@ -1,7 +1,7 @@
 mod nsjail;
 mod spec;
 use dotenv::dotenv;
-use metrics::{counter, describe_counter, describe_gauge};
+use metrics::{counter, describe_counter, describe_gauge, Label};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
 use spec::RunSpec;
@@ -43,7 +43,6 @@ lazy_static! {
         .unwrap_or_else(|_| "/opt/evaluator/config".to_string());
     static ref COMPILERS_PATH: String = std::env::var("EVALUATOR_COMPILERS_PATH")
         .unwrap_or_else(|_| "/opt/evaluator/compilers".to_string());
-    static ref LUA_REQUEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
     static ref PROMETHEUS: PrometheusHandle = PrometheusBuilder::new()
         .install_recorder()
         .expect("Failed to create PrometheusBuilder");
@@ -261,7 +260,20 @@ async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body
     let mut file = File::create(path)?;
     file.write_all(payload.code.as_bytes())?;
 
-    let result = run_spec(runspec, &payload, &execution_id).await?;
+    counter!(
+        "evaluator_requests_by_language",
+        1,
+        vec![Label::new("language", payload.language.clone())]
+    );
+    let result = run_spec(runspec, &payload, &execution_id).await;
+    if result.is_err() {
+        counter!(
+            "evaluator_errors_by_language",
+            1,
+            vec![Label::new("language", payload.language.clone())]
+        );
+    }
+    let result = result?;
 
     fs::remove_dir_all(prefix).context("Could not remove source folder")?;
 
@@ -282,7 +294,7 @@ async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
                 Ok(r) => Ok(r),
                 Err(e) => {
                     println!("Error: {:?}", e);
-                    counter!("total_evaluator_errors", 1);
+                    counter!("evaluator_errors_total", 1);
                     let mut response = Response::new(Body::from(e.to_string()));
                     *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
                     Ok(response)
@@ -319,16 +331,19 @@ async fn main() -> Result<()> {
     fs::create_dir_all(&*WORKDIR).expect("Failed to create workdir");
 
     describe_gauge!(
-        "total_connections_active",
+        "http_connections_active_total",
         "Total number of active connections"
     );
     describe_counter!(
-        "total_evaluator_errors",
+        "evaluator_requests_total",
+        "Number of requests to the evaluator"
+    );
+    describe_counter!(
+        "evaluator_errors_total",
         "Total number of errors (panics) in the evaluator"
     );
-    describe_counter!("evaluator_requests", "Number of requests to the evaluator");
     describe_counter!(
-        "evaluator_errors",
+        "submitted_program_errors_total",
         "Number of errors in the user submitted program"
     );
 

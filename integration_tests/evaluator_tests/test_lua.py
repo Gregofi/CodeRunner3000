@@ -1,6 +1,8 @@
 import requests
+from time import sleep
 
 EVALUATOR_ADDRESS = "http://evaluator:7800/api/v1/evaluate"
+EVALUATOR_METRICS = "http://evaluator:7800/metrics"
 
 
 def generate_lua(code: str):
@@ -15,6 +17,9 @@ def test_eval_lua_basic():
     values = response.json()
     assert values["stdout"] == 'Hello, World!\n'
     assert values["stderr"] == ''
+
+    metrics = requests.get(EVALUATOR_METRICS).text
+    assert 'evaluator_requests_by_language{language="lua"} 1' in metrics
 
 
 def test_eval_lua_funs():

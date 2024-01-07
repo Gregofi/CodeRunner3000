@@ -18,7 +18,7 @@ var (
         "evaluator:7800/metrics",
     }
     nginx_endpoints = []nginxEndpoint{
-        nginxEndpoint{
+        {
             endpoint: "website-proxy:80/nginx_status",
             authorization: os.Getenv("WEBSITE_PROXY_NGINX_STATUS_TOKEN"),
         },
@@ -30,14 +30,14 @@ func allMetrics(w http.ResponseWriter, r *http.Request) {
     for _, endpoint := range endpoints {
         resp, err := http.Get("http://" + endpoint)
         if err != nil {
-            fmt.Fprintf(w, "Error: %s\n", err)
-            return
+            fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+            continue
         }
         defer resp.Body.Close()
 
         b, err := io.ReadAll(resp.Body)
         if err != nil {
-            fmt.Fprintf(w, "Error fetching metrics from endpoint %s: %s\n", endpoint, err)
+            fmt.Fprintf(os.Stderr, "Error fetching metrics from endpoint %s: %s\n", endpoint, err)
             continue
         }
 
@@ -47,15 +47,15 @@ func allMetrics(w http.ResponseWriter, r *http.Request) {
     for _, endpoint := range nginx_endpoints {
         req, err := http.NewRequest("GET", "http://" + endpoint.endpoint, nil)
         if err != nil {
-            fmt.Fprintf(w, "Error: %s\n", err)
+            fmt.Fprintf(os.Stderr, "Error: %s\n", err)
             continue
         }
         req.Header.Set("Authorization", "Bearer " + endpoint.authorization)
 
         resp, err := http.DefaultClient.Do(req)
         if err != nil {
-            fmt.Fprintf(w, "Error: %s\n", err)
-            return
+            fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+            continue
         }
         defer resp.Body.Close()
 
