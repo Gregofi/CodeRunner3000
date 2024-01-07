@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
 	// From https://svelte.dev/examples/modal
 
 	export let showModal; // boolean
+	export let modalName: string;
 
 	let dialog; // HTMLDialogElement
 
@@ -22,6 +23,7 @@
 		<hr />
 		<!-- svelte-ignore a11y-autofocus -->
 		<button
+			name={modalName + '-close-btn'}
 			class="mt-2 mx-auto py-1 w-full bg-gray-500 text-white"
 			autofocus
 			on:click={() => dialog.close()}>Close</button

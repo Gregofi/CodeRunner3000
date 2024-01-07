@@ -5,6 +5,9 @@ const config: PlaywrightTestConfig = {
 		command: 'pnpm run dev',
 		port: 5173
 	},
+	use: {
+		baseURL: 'http://localhost:5173'
+	},
 	testDir: 'tests',
 	testMatch: /(.+\.)?(test|spec)\.[jt]s/
 };
