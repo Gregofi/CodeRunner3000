@@ -169,9 +169,9 @@
 		}
 	};
 
-	const languageChange = () => {
-		current_compiler = languages[current_language].compilers?.[0];
-		current_executor = languages[current_language].executors?.[0];
+	const languageChange = (conf: { compiler?: string; executor?: string } = {}) => {
+		current_compiler = conf.compiler ?? languages[current_language].compilers?.[0];
+		current_executor = conf.executor ?? languages[current_language].executors?.[0];
 		const language = languages[current_language].editor_name;
 		editor.changeLanguage(language);
 		const loaded = loadFromLocalStorage();
@@ -224,14 +224,15 @@
 			const urlParams = new URLSearchParams(window.location.search);
 			const codedInput = urlParams.get('input');
 			if (codedInput !== null) {
-				const input = JSON.parse(atob(codedInput));
+				const input = JSON.parse(atob(codedInput)) as IPayload;
+				console.log('loading code from url', input);
 				const code = input.code;
 				const language = input.language;
 				if (code && language && languages[language] !== undefined) {
-					current_executor = input.exec_opts?.executor;
-					current_compiler = input.compiler_opts?.compiler;
+					current_executor = input.executor;
+					current_compiler = input.compiler;
 					current_language = language;
-					languageChange();
+					languageChange({ compiler: current_compiler, executor: current_executor });
 					editor.setEditorValue(code);
 				}
 			} else {
@@ -241,6 +242,21 @@
 					renderDefaultCode();
 				}
 			}
+			// Playwright doesn't have any decent access to monaco, we have to do things
+			// like "click the div, ctrl + a, start typing etc.", so this export is
+			// to make the test easier to write.
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(window as any).getMonacoEditorValue = () => {
+				return editor.getEditorValue();
+			};
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(window as any).setMonacoEditorValue = (value: string) => {
+				editor.setEditorValue(value);
+			};
 		});
 	});
 
@@ -284,6 +300,7 @@
 			{/if}
 			<button
 				class="btn"
+				name="share-modal-btn"
 				on:click={() => {
 					showModal = true;
 					lastUrl = createLink();
@@ -292,7 +309,7 @@
 			<input type="checkbox" name="vim-mode" on:change={toggleVimMode} bind:this={vimChecker} />
 			<span class="font-bold ml-1">Vim</span>
 		</div>
-		<div class="grow">
+		<div class="grow data-pw-monaco-editor-main">
 			<MonacoEditor bind:this={editor} />
 		</div>
 	</div>
@@ -320,7 +337,7 @@
 	</div>
 </div>
 
-<Modal bind:showModal>
+<Modal bind:showModal modalName="share-modal">
 	<div slot="header">
 		<h1 class="text-xl font-bold">Share</h1>
 	</div>
@@ -328,9 +345,16 @@
 	<p>This means that the code might not work in the future.</p>
 	<br />
 	<p>Use the following link to share your code:</p>
-	<input class="border w-96 p-1 rounded-lg" type="text" value={lastUrl} readonly />
+	<input
+		class="border w-96 p-1 rounded-lg"
+		type="text"
+		name="share-input"
+		value={lastUrl}
+		readonly
+	/>
 	<button
 		class="btn btn-blue mt-2 w-44"
+		name="share-btn"
 		on:click={(e) => {
 			navigator.clipboard.writeText(lastUrl);
 			changeButtonText(e.target, 'Copied!');
