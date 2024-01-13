@@ -47,7 +47,13 @@
 			executors: ['python3-bookworm']
 		},
 		// racket: { name: 'racket', server_name: 'racket', editor_name: 'scheme', text: 'Racket', executors: ["racket-bookworm"] },
-		// bash: { name: 'bash', server_name: 'bash', editor_name: 'shell', text: 'Bash', executors: ["bash"] },
+		bash: {
+			name: 'bash',
+			server_name: 'bash',
+			editor_name: 'shell',
+			text: 'Bash',
+			executors: ['bash-bookworm']
+		},
 		c: {
 			name: 'c',
 			server_name: 'c',

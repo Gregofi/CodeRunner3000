@@ -65,3 +65,10 @@
   - ${COMPILER} -C strip=symbols -C linker=/usr/bin/gcc source.rs
   - rm source.rs
   - ./source
+
+- name: bash
+  executors:
+  - name: bash-bookworm
+    path: /usr/bin/bash
+  commands:
+  - "PATH='/bin:/usr/bin' ${EXECUTOR} ${SOURCE_FILE} ${SOURCE_ARGS}"
