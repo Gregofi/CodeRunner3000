@@ -191,8 +191,11 @@ async fn execute(spec: &RunSpec, payload: &RequestPayload, eval_id: &str) -> Res
     let nsjail = nsjail::NsJailConfig::new()
         .config(format!("{}/userspace.cfg", *CONFIG_PATH).as_str())
         .readonly_bind(source_folder.as_str(), source_folder.as_str());
-    let mut cmd = nsjail.run(bash_wrapper);
-    let output = cmd.output()?;
+    let output = tokio::task::spawn_blocking(move || {
+        let mut cmd = nsjail.run(bash_wrapper);
+        cmd.output()
+    })
+    .await??;
 
     let stdout = truncate_output(&String::from_utf8(output.stdout)?);
     let mut stderr = truncate_output(&String::from_utf8(output.stderr)?);
