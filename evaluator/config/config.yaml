@@ -38,13 +38,6 @@
   commands:
   - "${EXECUTOR} ${EXECUTOR_ARGS} ${SOURCE_FILE} ${SOURCE_ARGS}"
 
-- name: racket
-  executors:
-  - name: racket-bookworm
-    path: /usr/bin/racket
-  commands:
-  - "${EXECUTOR} ${EXECUTOR_ARGS} ${SOURCE_FILE} ${SOURCE_ARGS}"
-
 #- name: haskell
 #  compilers:
 #  - name: ghc-bookworm
@@ -72,3 +65,11 @@
     path: /usr/bin/bash
   commands:
   - "PATH='/bin:/usr/bin' ${EXECUTOR} ${SOURCE_FILE} ${SOURCE_ARGS}"
+
+- name: racket
+  executors:
+  - name: racket-v8.11.1
+    path: /opt/evaluator/compilers/racket/racket-v8.11.1/racket/bin/racket
+  commands:
+    - cp ${SOURCE_FILE} source.rkt
+    - ${EXECUTOR} source.rkt ${SOURCE_ARGS}

@@ -31,29 +31,21 @@ RUN git clone https://github.com/google/nsjail.git /nsjail/ && \
     git checkout 3.4 && \
     make
 
-# ====== GCC build image ======
-FROM debian:bookworm-slim as gcc-builder
-
-WORKDIR /opt/evaluator/
-
-COPY ./scripts/setup_cpp.sh ./scripts/setup_cpp.sh
-
-RUN ./scripts/setup_cpp.sh
-
 # ====== Lua build image ======
-FROM debian:bookworm-slim as lua-builder
+FROM gcc:13.2-bookworm as lua-builder
 
 WORKDIR /opt/evaluator/
-
-RUN apt-get update && apt-get install -y \
-    wget \
-    make \
-    gcc \
-    libreadline-dev
     
-COPY ./scripts ./scripts
+COPY ./scripts/setup_lua.sh ./scripts/setup_lua.sh
 
-RUN ./scripts/setup.sh
+RUN ./scripts/setup_lua.sh
+
+# ====== Racket build image ======
+FROM gcc:13.2-bookworm as racket-builder
+
+COPY ./scripts/setup_racket.sh ./scripts/setup_racket.sh
+
+RUN ./scripts/setup_racket.sh
 
 # ====== Runtime image ======
 FROM debian:bookworm-slim
@@ -82,7 +74,8 @@ COPY --from=builder /rust/app/target/release/evaluator bin/evaluator
 COPY --from=nsjail-builder /nsjail/nsjail bin/nsjail
 
 # compilers and interpreters
-COPY --from=lua-builder /opt/evaluator/compilers /opt/evaluator/compilers
+COPY --from=lua-builder /opt/evaluator/compilers/lua /opt/evaluator/compilers/lua
+COPY --from=racket-builder /opt/evaluator/compilers/racket /opt/evaluator/compilers/racket
 
 
 COPY config/ config/
