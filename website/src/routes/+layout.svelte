@@ -2,10 +2,12 @@
 	import '../app.css';
 </script>
 
-<div class="flex flex-col h-full">
+<div class="flex flex-col">
+	<!-- DO NOT CHANGE THE HEIGHT!!! It is bound to the height of the body in code/+page.svelte,
+    see #main div CSS rules -->
 	<header
 		class="border-b flex flex-col items-center
-               justify-between justify-center sm:flex-row sm:px-10 sm:h-12"
+               justify-between justify-center sm:flex-row sm:px-10 h-12"
 	>
 		<span class="text-lg"><tt>CodeRunner3000</tt></span>
 		<h1>Run code in browser</h1>
