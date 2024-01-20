@@ -65,7 +65,7 @@
 			server_name: 'c',
 			editor_name: 'c',
 			text: 'C',
-			compilers: ['gcc-trunk', 'gcc-bookworm']
+			compilers: ['gcc-bookworm']
 		},
 		cpp: {
 			name: 'cpp',
