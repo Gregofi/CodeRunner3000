@@ -287,7 +287,7 @@
 	};
 </script>
 
-<div class="flex flex-row max-xl:flex-col grow">
+<div id="main-div" class="flex flex-row max-xl:flex-col">
 	<div class="border border-gray-300 grow flex flex-col">
 		<div class="ml-2 h-10 flex items-center overflow-x-auto">
 			<button class="btn btn-blue whitespace-nowrap" on:click={compile}>Run (Ctrl+S)</button>
@@ -378,16 +378,6 @@
 </Modal>
 
 <style>
-	:global(body) {
-		height: 100%;
-	}
-	:global(html) {
-		height: 100%;
-	}
-	:global(#main-div) {
-		height: 100%;
-	}
-
 	.btn {
 		@apply font-bold py-2 px-4;
 	}
@@ -396,5 +386,10 @@
 	}
 	.btn-blue:hover {
 		@apply bg-green-900;
+	}
+
+	#main-div {
+		/* The exact size of the rest of the div (3rem is the size of header) */
+		height: calc(100vh - 3rem);
 	}
 </style>
