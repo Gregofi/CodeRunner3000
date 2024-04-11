@@ -12,7 +12,7 @@ help. Requests to the evaluator are JSONs in the following format:
 }
 ```
 
-They may also be a `"compiler"` member.
+There may also be a `"compiler"` member.
 
 ## Evaluator
 
