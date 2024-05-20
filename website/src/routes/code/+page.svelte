@@ -369,10 +369,10 @@
 		name="share-btn"
 		on:click={(e) => {
 			navigator.clipboard.writeText(lastUrl);
-			changeButtonText(e.target, 'Copied!');
+            changeButtonText(e.target, 'Copied!');
 		}}>Copy to clipboard</button
 	>
-	{#if lastUrl.length > 2048}
+	{#if lastUrl.length > 10000}
 		<p class="text-red-500">Warning: URL is too long, might not be supported by some browsers.</p>
 	{/if}
 </Modal>
