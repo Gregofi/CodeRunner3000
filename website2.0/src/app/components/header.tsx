@@ -10,14 +10,23 @@ export function Header() {
             <h1 className="hidden sm:inline">Run code in browser</h1>
             <nav className="justify-between hidden sm:flex">
                 <div>
-                    <a className="m-1 underline" href="/code">Code runner</a>
-                    <span className="m-1 underline text-gray-400 hover:cursor-not-allowed">Gadgets</span>
+                    <a className="m-1 underline" href="/code">
+                        Code runner
+                    </a>
+                    <span className="m-1 underline text-gray-400 hover:cursor-not-allowed">
+                        Gadgets
+                    </span>
                 </div>
                 <a href="https://github.com/Gregofi/CodeRunner3000">
-                    <Image src="github-mark.svg" alt="GitHub" className="m-1" width="24" height="24" />
+                    <Image
+                        src="github-mark.svg"
+                        alt="GitHub"
+                        className="m-1"
+                        width="24"
+                        height="24"
+                    />
                 </a>
             </nav>
         </header>
     );
 }
-

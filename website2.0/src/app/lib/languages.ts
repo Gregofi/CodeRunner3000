@@ -1,20 +1,20 @@
 export type Executor = {
     // Server name of the interpreter
-    value: string,
+    value: string;
     // Display name of the interpreter
-    label: string,
-}
+    label: string;
+};
 
 export type LanguageConfig = {
-    name: string,
-    label: string,
-    server_name: string
-    interpreters?: Executor[],
-    compilers?: Executor[],
-}
+    name: string;
+    label: string;
+    server_name: string;
+    interpreters?: Executor[];
+    compilers?: Executor[];
+};
 
 export const languages: Record<string, LanguageConfig> = {
-    "lua": {
+    lua: {
         name: 'lua',
         label: 'Lua',
         server_name: 'lua',
@@ -25,22 +25,18 @@ export const languages: Record<string, LanguageConfig> = {
             { value: 'lua5.4.6', label: '5.4' },
         ],
     },
-    "python": {
+    python: {
         name: 'python',
         label: 'Python',
         server_name: 'python',
-        interpreters: [
-            { value: 'python-bookworm', label: 'Debian Bookworm' },
-        ],
+        interpreters: [{ value: 'python-bookworm', label: 'Debian Bookworm' }],
     },
-    "cpp": {
+    cpp: {
         name: 'cpp',
         label: 'C++',
         server_name: 'cpp',
-        compilers: [
-            { value: 'gcc-bookworm', label: 'GCC - Debian Bookworm' },
-        ],
+        compilers: [{ value: 'gcc-bookworm', label: 'GCC - Debian Bookworm' }],
     },
-}
+};
 
 export type Language = keyof typeof languages;
