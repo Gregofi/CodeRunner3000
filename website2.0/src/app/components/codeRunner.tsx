@@ -3,18 +3,22 @@
 import { Header } from './header';
 import { CodeOutput } from './codeOutput';
 import { CheckBox } from './checkBox';
-import { languages, Language } from '../lib/languages';
+import { languages } from '../lib/languages';
 
 import { initVimMode } from 'monaco-vim';
 import Editor from '@monaco-editor/react';
 import React from 'react';
 import Select from 'react-select';
+import { Button, Snackbar } from '@mui/material';
+import { CurrentChoice } from '../lib/types';
+import ShareButton from './share';
 
-type CurrentChoice = {
-    name: Language;
-    interpreter?: string;
-    compiler?: string;
-};
+/// Creates a link through which the current code can be shared.
+const createSharedLink = (currentChoices: CurrentChoice, code: string): boolean => {
+
+    navigator.clipboard.writeText("http://localhost:3000/abcd");
+    return true;
+}
 
 export default function CodeRunner() {
     let [lang, setLang] = React.useState<CurrentChoice>({ name: 'lua', interpreter: 'lua5.4.6' });
@@ -79,6 +83,7 @@ export default function CodeRunner() {
                             }}
                             label="Vim mode"
                         />
+                        <ShareButton onClick={() => createSharedLink(lang, editorRef.current.value)}/>
                     </div>
                     <div className="grow">
                         <Editor
