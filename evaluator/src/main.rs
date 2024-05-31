@@ -283,6 +283,7 @@ async fn handle_eval_request(req: Request<Body>) -> anyhow::Result<Response<Body
     let response_payload = serde_json::to_string(&result)?;
     let response = Response::builder()
         .header("Content-Type", "application/json")
+        .header("Cache-Control", "no-store")
         .body(Body::from(response_payload))?;
 
     Ok(response)
