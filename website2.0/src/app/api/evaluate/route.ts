@@ -29,9 +29,14 @@ export async function POST(req: NextRequest) {
                 'Content-Type': 'application/json',
                 Accept: 'application/json'
             },
-            body: JSON.stringify({ code, ...currentChoice })
+            body: JSON.stringify({ code, language: currentChoice.language, executor: currentChoice.interpreter, compiler: currentChoice.compiler})
         });
-        return NextResponse.json(await response.json());
+        if (!response.ok) {
+            console.log('Backend returned non-OK status code, message:', await response.text());
+            return NextResponse.json({}, {status: 500});
+        } else {
+            return NextResponse.json(await response.json());
+        }
     } catch (e) {
         console.log('Failed to compile code');
         console.log(' - Backend URL', url);

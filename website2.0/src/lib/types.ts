@@ -1,7 +1,7 @@
 import { Language } from '../lib/languages';
 
 export type CurrentChoice = {
-    name: Language;
+    language: Language;
     interpreter?: string;
     compiler?: string;
 };

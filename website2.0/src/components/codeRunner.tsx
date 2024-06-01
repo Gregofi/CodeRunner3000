@@ -20,13 +20,13 @@ const createSharedLink = (currentChoices: CurrentChoice, code: string): boolean 
 }
 
 export default function CodeRunner() {
-    const [currentChoice, setCurrentChoice] = React.useState<CurrentChoice>({ name: 'lua', interpreter: 'lua5.4.6' });
+    const [currentChoice, setCurrentChoice] = React.useState<CurrentChoice>({ language: 'lua', interpreter: 'lua5.4.6' });
     const [vimMode, setVimMode] = React.useState<ReturnType<typeof initVimMode> | null>(null);
     /// Whether the code is currently being executed. Prevents multiple executions.
     const [lastExecution, setLastExecution] = React.useState<ExecutionData>({ pending: false, result: undefined });
     const editorRef = React.useRef<typeof Editor>();
 
-    const langObject = languages[currentChoice.name];
+    const langObject = languages[currentChoice.language];
     const currentInterpreter = langObject?.interpreters?.find((i) => i.value === currentChoice.interpreter);
     const currentCompiler = langObject?.compilers?.find((i) => i.value === currentChoice.compiler);
 
@@ -72,7 +72,7 @@ export default function CodeRunner() {
                             onChange={(conf) =>
                                 setCurrentChoice({
                                     ...currentChoice,
-                                    name: conf!.name,
+                                    language: conf!.name,
                                     interpreter: conf!.interpreters?.at(0)?.value,
                                     compiler: conf!.compilers?.at(0)?.value,
                                 })
