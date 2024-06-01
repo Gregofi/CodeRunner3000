@@ -12,6 +12,8 @@ import { CurrentChoice, ExecutionData, ExecutorResponse } from '../lib/types';
 import ShareButton from './share';
 import { Button } from '@mui/material';
 
+const DEBOUNCE_TIME = 3000;
+
 /// Creates a link through which the current code can be shared.
 const createSharedLink = (currentChoices: CurrentChoice, code: string): boolean => {
 
@@ -30,31 +32,32 @@ export default function CodeRunner() {
     const currentInterpreter = langObject?.interpreters?.find((i) => i.value === currentChoice.interpreter);
     const currentCompiler = langObject?.compilers?.find((i) => i.value === currentChoice.compiler);
 
-    let timeoutId: NodeJS.Timeout | null = null;
+    const timeoutId = React.useRef<NodeJS.Timeout | null>(null);
+    const lastExecutionId = React.useRef(0);
 
-    // Not really working, because it will be block in vim mode and also in insert mode
+    // TODO: Not really working, because it will be block in vim mode and also in insert mode
     editorRef.current?.updateOptions({ tabSize: 4, cursorStyle: vimMode !== null ? "block" : "line" });
 
     function handleEditorDidMount(editor: typeof Editor, monaco: any) {
         editorRef.current = editor;
+        executeCode();
     }
 
     function debounce() {
-        if (timeoutId) {
-            clearTimeout(timeoutId);
+        if (timeoutId.current !== null) {
+            clearTimeout(timeoutId.current);
         }
 
-        timeoutId = setTimeout(() => {
+        timeoutId.current = setTimeout(() => {
             executeCode();
-        }, 5000);
-
-        return timeoutId;
+        }, DEBOUNCE_TIME);
     }
 
     /// Sends a request to the backend to execute the code.
     /// Returns the response from the backend.
     /// Updates the lastExecution with the response.
     async function executeCode(): Promise<void> {
+        const execId = ++lastExecutionId.current;
         const code = editorRef.current!.getValue();
         setLastExecution({ pending: true });
         const response = await fetch('/api/evaluate', {
@@ -66,6 +69,12 @@ export default function CodeRunner() {
         })
         if (!response.ok) {
             throw new Error('Failed to execute code');
+        }
+
+        // This means that code that was executed after this one was faster
+        // and has already finished. Therefore we should ignore the result of this one.
+        if (execId !== lastExecutionId.current) {
+            return;
         }
 
         setLastExecution({ pending: false, result: await response.json() });
@@ -125,7 +134,7 @@ export default function CodeRunner() {
                         <Editor
                             height="100%"
                             defaultLanguage="javascript"
-                            defaultValue="// some comment"
+                            defaultValue="print(1)"
                             onMount={handleEditorDidMount}
                             onChange={debounce}
                         />
