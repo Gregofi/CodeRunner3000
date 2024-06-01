@@ -30,6 +30,8 @@ export default function CodeRunner() {
     const currentInterpreter = langObject?.interpreters?.find((i) => i.value === currentChoice.interpreter);
     const currentCompiler = langObject?.compilers?.find((i) => i.value === currentChoice.compiler);
 
+    let timeoutId: NodeJS.Timeout | null = null;
+
     // Not really working, because it will be block in vim mode and also in insert mode
     editorRef.current?.updateOptions({ tabSize: 4, cursorStyle: vimMode !== null ? "block" : "line" });
 
@@ -37,7 +39,22 @@ export default function CodeRunner() {
         editorRef.current = editor;
     }
 
-    async function executeCode(): Promise<ExecutorResponse> {
+    function debounce() {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+
+        timeoutId = setTimeout(() => {
+            executeCode();
+        }, 5000);
+
+        return timeoutId;
+    }
+
+    /// Sends a request to the backend to execute the code.
+    /// Returns the response from the backend.
+    /// Updates the lastExecution with the response.
+    async function executeCode(): Promise<void> {
         const code = editorRef.current!.getValue();
         setLastExecution({ pending: true });
         const response = await fetch('/api/evaluate', {
@@ -52,7 +69,6 @@ export default function CodeRunner() {
         }
 
         setLastExecution({ pending: false, result: await response.json() });
-        return response.json();
     }
 
     if (!langObject) {
@@ -111,6 +127,7 @@ export default function CodeRunner() {
                             defaultLanguage="javascript"
                             defaultValue="// some comment"
                             onMount={handleEditorDidMount}
+                            onChange={debounce}
                         />
                     </div>
                 </div>
