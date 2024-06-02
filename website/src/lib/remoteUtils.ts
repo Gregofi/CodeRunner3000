@@ -4,12 +4,14 @@ export const sendCodeToServer = async (
 	code: string,
 	language: LangKey,
 	compiler?: string,
-	executor?: string
+	executor?: string,
+	compilerOptions?: string
 ): Promise<Result> => {
 	const body = JSON.stringify({
 		code,
 		language,
 		compiler,
+		compiler_args: compilerOptions?.split(' '),
 		executor
 	});
 	const response = await fetch('/api/code-eval', {
