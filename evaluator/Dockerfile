@@ -72,14 +72,12 @@ RUN apt-get install -y \
 
 COPY --from=builder /rust/app/target/release/evaluator bin/evaluator
 COPY --from=nsjail-builder /nsjail/nsjail bin/nsjail
+COPY config/ config/
+COPY ./scripts/entrypoint.sh scripts/entrypoint.sh
 
 # compilers and interpreters
 COPY --from=lua-builder /opt/evaluator/compilers/lua /opt/evaluator/compilers/lua
 COPY --from=racket-builder /opt/evaluator/compilers/racket /opt/evaluator/compilers/racket
-
-
-COPY config/ config/
-COPY ./scripts/entrypoint.sh scripts/entrypoint.sh
 
 EXPOSE 7800
 

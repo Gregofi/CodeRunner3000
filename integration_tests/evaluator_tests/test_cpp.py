@@ -20,3 +20,20 @@ int main() {
     assert values["stdout"] == "Hello, World!\n", values['stderr']
     assert values["stderr"] == ""
 
+
+def test_empty_args():
+    payload = generate_cpp("""
+#include <iostream>                        
+
+int main() {
+    std::cout << "Hello, World!\\n";
+    return 0;
+}
+""")
+
+    payload.compiler_args = ['']
+    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    assert response.status_code == 200
+    values = response.json()
+    assert values["stdout"] == "Hello, World!\n", values['stderr']
+    assert values["stderr"] == ""

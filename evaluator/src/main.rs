@@ -99,8 +99,11 @@ fn random_id(length: usize) -> String {
         .collect()
 }
 
+/// Escapes args into 'arg1', also removes args
+/// which are whitespace only.
 fn escape_args(args: &[String]) -> Vec<String> {
     args.iter()
+        .filter(|arg| !arg.trim().is_empty())
         .map(|arg| format!("'{}'", arg))
         .collect::<Vec<String>>()
 }
