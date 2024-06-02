@@ -3,7 +3,7 @@ export type ILanguage = {
 	// Name of the language as used by the server
 	server_name: string;
 	// Name of the language as used by the monaco editor.
-	// THis can be different than the actual language,
+	// This can be different from the actual language,
 	// for example for Racket we use Scheme.
 	editor_name: string;
 	// The text representation, what is shown in the dropdown.
@@ -12,18 +12,9 @@ export type ILanguage = {
 	compilers?: string[];
 };
 
-export type IPayload = {
-	code: string;
-	language: string;
-	executor?: string;
-	compiler?: string;
-	executor_args?: string[];
-	compiler_args?: string[];
-	program_args?: string[];
-	stdin?: string;
-};
-
 export type Result = {
 	stdout: string;
 	stderr: string;
 };
+
+export type LangKey = 'lua' | 'python3' | 'racket' | 'bash' | 'c' | 'cpp' | 'rust';
