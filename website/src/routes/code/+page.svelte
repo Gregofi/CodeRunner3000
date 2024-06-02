@@ -11,7 +11,13 @@
 	let editor: MonacoEditor;
 
 	let loading = false;
-	let lastResult: Result | null = null;
+	let lastResult: Result = {
+		stdout: '',
+		stderr: ''
+	};
+	/// Only last compilation can overwrite the result, otherwise slower code
+	/// executed earlier could overwrite result from faster code executed later.
+	let lastResultId = 0;
 
 	let timer: ReturnType<typeof setTimeout>;
 
@@ -20,6 +26,7 @@
 	let currentLanguage: LangKey = 'lua';
 	let currentExecutor: string | undefined;
 	let currentCompiler: string | undefined;
+	let compilerOptions: string | undefined;
 
 	$: langObj = languages[currentLanguage];
 
@@ -28,10 +35,22 @@
 	const delay = 2000;
 
 	const compile = () => {
+		if (timer) {
+			clearTimeout(timer);
+		}
 		loading = true;
-		sendCodeToServer(editor.getEditorValue(), currentLanguage, currentCompiler, currentExecutor)
+		const id = ++lastResultId;
+		sendCodeToServer(
+			editor.getEditorValue(),
+			currentLanguage,
+			currentCompiler,
+			currentExecutor,
+			compilerOptions
+		)
 			.then((result: Result) => {
-				lastResult = result;
+				if (lastResultId === id) {
+					lastResult = result;
+				}
 			})
 			.catch((err: Error) => {
 				lastResult = {
@@ -102,12 +121,14 @@
 	const languageChange = (conf: { compiler?: string; executor?: string } = {}) => {
 		currentCompiler = conf.compiler ?? langObj.compilers?.[0];
 		currentExecutor = conf.executor ?? langObj.executors?.[0];
+		compilerOptions = '';
 		const language = languages[currentLanguage].editor_name;
 		editor.changeLanguage(language);
 		const loaded = loadFromLocalStorage();
 		if (!loaded) {
 			renderDefaultCode();
 		}
+		compile();
 	};
 
 	const toggleVimMode = (e: Event) => {
@@ -133,9 +154,6 @@
 				}
 			});
 
-			// Compile on the webpage load
-			compile();
-
 			if (settings.vimMode) {
 				vimChecker.checked = true;
 				editor.turnOnVimMode();
@@ -146,6 +164,7 @@
 			if (!loadedFromLocal) {
 				renderDefaultCode();
 			}
+			compile();
 
 			// Playwright doesn't have any decent access to monaco, we have to do things
 			// like "click the div, ctrl + a, start typing etc.", so this export is
@@ -194,8 +213,21 @@
 					{/each}
 				</select>
 			{/if}
-			<input type="checkbox" name="vim-mode" on:change={toggleVimMode} bind:this={vimChecker} />
+			<input
+				class="ml-1"
+				type="checkbox"
+				name="vim-mode"
+				on:change={toggleVimMode}
+				bind:this={vimChecker}
+			/>
 			<span class="font-bold ml-1">Vim</span>
+			{#if langObj.compilers}
+				<input
+					class="ml-2 p-1 border"
+					bind:value={compilerOptions}
+					placeholder="compiler options..."
+				/>
+			{/if}
 		</div>
 		<div class="grow data-pw-monaco-editor-main">
 			<MonacoEditor bind:this={editor} />
