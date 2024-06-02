@@ -5,84 +5,8 @@
 	import Modal from '$lib/Modal.svelte';
 	import { defaultPrograms } from '$lib/defaultPrograms';
 	import { getSettings, setVimMode } from '$lib/settings';
-
-	interface ILanguage {
-		name: string;
-		// Name of the language as used by the server
-		server_name: string;
-		// Name of the language as used by the monaco editor.
-		// THis can be different than the actual language,
-		// for example for Racket we use Scheme.
-		editor_name: string;
-		// The text representation, what is shown in the dropdown.
-		text: string;
-		executors?: string[];
-		compilers?: string[];
-	}
-
-	interface IPayload {
-		code: string;
-		language: string;
-		executor?: string;
-		compiler?: string;
-		executor_args?: string[];
-		compiler_args?: string[];
-		program_args?: string[];
-		stdin?: string;
-	}
-
-	const languages: { [key in string]: ILanguage } = {
-		lua: {
-			name: 'lua',
-			server_name: 'lua',
-			editor_name: 'lua',
-			text: 'Lua',
-			executors: ['lua5.4.6', 'lua5.3.6', 'lua5.2.4', 'lua5.1.5']
-		},
-		python3: {
-			name: 'python3',
-			server_name: 'python3',
-			editor_name: 'python',
-			text: 'Python 3',
-			executors: ['python3-bookworm']
-		},
-		racket: {
-			name: 'racket',
-			server_name: 'racket',
-			editor_name: 'scheme',
-			text: 'Racket',
-			executors: ['racket-v8.11.1']
-		},
-		bash: {
-			name: 'bash',
-			server_name: 'bash',
-			editor_name: 'shell',
-			text: 'Bash',
-			executors: ['bash-bookworm']
-		},
-		c: {
-			name: 'c',
-			server_name: 'c',
-			editor_name: 'c',
-			text: 'C',
-			compilers: ['gcc-bookworm']
-		},
-		cpp: {
-			name: 'cpp',
-			server_name: 'cpp',
-			editor_name: 'cpp',
-			text: 'C++',
-			compilers: ['gcc-bookworm']
-		},
-		// haskell: { name: 'haskell', server_name: 'haskell', editor_name: 'Haskell', text: 'Haskell', compilers: ["ghc-bookworm"] },
-		rust: {
-			name: 'rust',
-			server_name: 'rust',
-			editor_name: 'rust',
-			text: 'Rust',
-			compilers: ['rustc-bookworm']
-		}
-	};
+	import type { IPayload } from '$lib/types';
+	import { languages } from '$lib/constants';
 
 	let stdout: HTMLElement;
 	let stderr: HTMLElement;
