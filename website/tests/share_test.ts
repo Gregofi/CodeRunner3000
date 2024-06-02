@@ -1,6 +1,6 @@
+/*
 import { test, expect } from '@playwright/test';
 
-/*
 test('test generating share link and accessing it', async ({ page }) => {
 	await page.goto('/code', { waitUntil: 'networkidle' });
 

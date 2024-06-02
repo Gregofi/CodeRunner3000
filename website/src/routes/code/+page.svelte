@@ -52,7 +52,7 @@
 					lastResult = result;
 				}
 			})
-			.catch((err: Error) => {
+			.catch(() => {
 				lastResult = {
 					stdout: 'Server error; Could not run the code.',
 					stderr: ''
