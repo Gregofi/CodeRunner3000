@@ -1,10 +1,10 @@
 <script lang="ts">
 	// From https://svelte.dev/examples/modal
 
-	export let showModal; // boolean
+	export let showModal: boolean = false; // boolean
 	export let modalName: string;
 
-	let dialog; // HTMLDialogElement
+	let dialog: HTMLDialogElement;
 
 	$: if (dialog && showModal) dialog.showModal();
 </script>
