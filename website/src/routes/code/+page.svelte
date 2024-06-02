@@ -20,6 +20,8 @@
 	let currentExecutor: string | undefined;
 	let currentCompiler: string | undefined;
 
+	$: langObj = languages[currentLanguage];
+
 	let showModal = false;
 	let lastUrl = '';
 	let vimChecker: HTMLInputElement;
@@ -28,15 +30,14 @@
 
 	const createPayload = (): IPayload => {
 		const code = editor.getEditorValue();
-		const language = languages[currentLanguage];
 		const payload: IPayload = {
 			code,
-			language: language.server_name,
+			language: langObj.server_name,
 			// the currentX stays even when changing to language that
 			// has no compiler/interpreter, so check if the language even
 			// needs interpreter/compiler.
-			compiler: language.compilers ? currentCompiler : undefined,
-			executor: language.executors ? currentExecutor : undefined
+			compiler: langObj.compilers ? currentCompiler : undefined,
+			executor: langObj.executors ? currentExecutor : undefined
 		};
 		return payload;
 	};
@@ -101,7 +102,7 @@
 	};
 
 	const renderDefaultCode = () => {
-		const editor_name = languages[currentLanguage].editor_name;
+		const editor_name = langObj.editor_name;
 		const defaultCode = defaultPrograms[editor_name];
 		if (defaultCode) {
 			editor.setEditorValue(defaultCode);
@@ -111,8 +112,8 @@
 	};
 
 	const languageChange = (conf: { compiler?: string; executor?: string } = {}) => {
-		currentCompiler = conf.compiler ?? languages[currentLanguage].compilers?.[0];
-		currentExecutor = conf.executor ?? languages[currentLanguage].executors?.[0];
+		currentCompiler = conf.compiler ?? langObj.compilers?.[0];
+		currentExecutor = conf.executor ?? langObj.executors?.[0];
 		const language = languages[currentLanguage].editor_name;
 		editor.changeLanguage(language);
 		const loaded = loadFromLocalStorage();
@@ -169,7 +170,7 @@
 				console.log('loading code from url', input);
 				const code = input.code;
 				const language = input.language;
-				if (code && language && languages[language] !== undefined) {
+				if (code && language && langObj !== undefined) {
 					currentExecutor = input.executor;
 					currentCompiler = input.compiler;
 					currentLanguage = language;
@@ -225,16 +226,16 @@
 					<option value={language.name}>{language.text}</option>
 				{/each}
 			</select>
-			{#if languages[currentLanguage].executors?.length > 0}
+			{#if langObj.executors?.length > 0}
 				<select bind:value={currentExecutor} name="executor" class="ml-2">
-					{#each languages[currentLanguage].executors as executor}
+					{#each langObj.executors ?? [] as executor}
 						<option value={executor}>{executor}</option>
 					{/each}
 				</select>
 			{/if}
-			{#if languages[currentLanguage].compilers?.length > 0}
+			{#if langObj.compilers?.length > 0}
 				<select bind:value={currentCompiler} name="compiler" class="ml-2">
-					{#each languages[currentLanguage].compilers as compiler}
+					{#each langObj.compilers ?? [] as compiler}
 						<option value={compiler}>{compiler}</option>
 					{/each}
 				</select>
