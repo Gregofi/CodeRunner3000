@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+/*
 test('test generating share link and accessing it', async ({ page }) => {
 	await page.goto('/code', { waitUntil: 'networkidle' });
 
@@ -51,3 +52,4 @@ test('test generating share link and accessing it', async ({ page }) => {
 	const codeAfter = await page.evaluate(() => window.getMonacoEditorValue());
 	expect(codeAfter).toEqual('print("hello")');
 });
+*/

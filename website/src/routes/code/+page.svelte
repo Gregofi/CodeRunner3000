@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import MonacoEditor from '$lib/monaco/MonacoEditor.svelte';
 	import Spinner from '$lib/Spinner.svelte';
-	import Modal from '$lib/Modal.svelte';
 	import { defaultPrograms } from '$lib/defaultPrograms';
 	import { getSettings, setVimMode } from '$lib/settings';
 	import type { IPayload } from '$lib/types';
@@ -22,8 +21,6 @@
 
 	$: langObj = languages[currentLanguage];
 
-	let showModal = false;
-	let lastUrl = '';
 	let vimChecker: HTMLInputElement;
 
 	const delay = 1000;
@@ -122,17 +119,6 @@
 		}
 	};
 
-	const createLink = () => {
-		const urlParams = new URLSearchParams();
-		const payload = createPayload();
-		urlParams.set('input', btoa(JSON.stringify(payload)));
-		const url = `${window.location.origin}${window.location.pathname}?${urlParams.toString()}`;
-		if (url.length > 2000) {
-			console.log('URL too long, might not be supported by some browsers.');
-		}
-		return url;
-	};
-
 	const toggleVimMode = (e: Event) => {
 		const target = e.target as HTMLInputElement;
 		setVimMode(target.checked);
@@ -201,20 +187,6 @@
 			};
 		});
 	});
-
-	const changeButtonText = (elem: HTMLButtonElement, text: string) => {
-		let oldText = elem.innerText;
-		elem.innerText = text;
-		elem.disabled = true;
-		elem.style.webkitFilter = 'grayscale(1)';
-		elem.style.cursor = 'not-allowed';
-		setTimeout(() => {
-			elem.innerText = oldText;
-			elem.disabled = false;
-			elem.style.webkitFilter = 'grayscale(0)';
-			elem.style.cursor = 'pointer';
-		}, 2000);
-	};
 </script>
 
 <div id="main-div" class="flex flex-row max-xl:flex-col">
@@ -240,14 +212,6 @@
 					{/each}
 				</select>
 			{/if}
-			<button
-				class="btn"
-				name="share-modal-btn"
-				on:click={() => {
-					showModal = true;
-					lastUrl = createLink();
-				}}>Share</button
-			>
 			<input type="checkbox" name="vim-mode" on:change={toggleVimMode} bind:this={vimChecker} />
 			<span class="font-bold ml-1">Vim</span>
 		</div>
@@ -278,34 +242,6 @@
 		</div>
 	</div>
 </div>
-
-<Modal bind:showModal modalName="share-modal">
-	<div slot="header">
-		<h1 class="text-xl font-bold">Share</h1>
-	</div>
-	<p>Please keep in mind that this feature is still in alpha and subject to change.</p>
-	<p>This means that the code might not work in the future.</p>
-	<br />
-	<p>Use the following link to share your code:</p>
-	<input
-		class="border w-96 p-1 rounded-lg"
-		type="text"
-		name="share-input"
-		value={lastUrl}
-		readonly
-	/>
-	<button
-		class="btn btn-blue mt-2 w-44"
-		name="share-btn"
-		on:click={(e) => {
-			navigator.clipboard.writeText(lastUrl);
-			changeButtonText(e.target, 'Copied!');
-		}}>Copy to clipboard</button
-	>
-	{#if lastUrl.length > 2048}
-		<p class="text-red-500">Warning: URL is too long, might not be supported by some browsers.</p>
-	{/if}
-</Modal>
 
 <style>
 	.btn {
