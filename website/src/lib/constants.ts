@@ -1,6 +1,6 @@
-import type { ILanguage } from './types';
+import type { ILanguage, LangKey } from './types';
 
-export const languages: { [key in string]: ILanguage } = {
+export const languages: { [key in LangKey]: ILanguage } = {
 	lua: {
 		name: 'lua',
 		server_name: 'lua',

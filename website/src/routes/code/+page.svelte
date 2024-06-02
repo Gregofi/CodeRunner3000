@@ -4,8 +4,9 @@
 	import OutputBox from '$lib/OutputBox.svelte';
 	import { defaultPrograms } from '$lib/defaultPrograms';
 	import { getSettings, setVimMode } from '$lib/settings';
-	import type { IPayload, Result } from '$lib/types';
+	import type { Result, LangKey } from '$lib/types';
 	import { languages } from '$lib/constants';
+	import { sendCodeToServer } from '$lib/remoteUtils';
 
 	let editor: MonacoEditor;
 
@@ -16,7 +17,7 @@
 
 	// It would be nice if we could bind these guys together into an object,
 	// but it seems that the bind:value things doesn't really work with it.
-	let currentLanguage = 'lua';
+	let currentLanguage: LangKey = 'lua';
 	let currentExecutor: string | undefined;
 	let currentCompiler: string | undefined;
 
@@ -26,48 +27,21 @@
 
 	const delay = 2000;
 
-	const createPayload = (): IPayload => {
-		const code = editor.getEditorValue();
-		return {
-			code,
-			language: langObj.server_name,
-			// the currentX stays even when changing to language that
-			// has no compiler/interpreter, so check if the language even
-			// needs interpreter/compiler.
-			compiler: langObj.compilers ? currentCompiler : undefined,
-			executor: langObj.executors ? currentExecutor : undefined
-		};
-	};
-
-	const compile = async () => {
-		// Can sometimes happen, probably at rerender and such.
-		if (!editor) {
-			return;
-		}
+	const compile = () => {
 		loading = true;
-		const body = JSON.stringify(createPayload());
-		const response = await fetch('/api/code-eval', {
-			method: 'POST',
-			body,
-			mode: 'cors',
-			headers: {
-				'Content-Type': 'application/json',
-				Accept: 'application/json'
-			}
-		});
-		if (response.ok) {
-			const data = await response.json();
-			lastResult = {
-				stdout: data.stdout,
-				stderr: data.stderr
-			};
-		} else {
-			lastResult = {
-				stdout: 'Error communicating with the evaluating server',
-				stderr: 'Error communicating with the evaluating server'
-			};
-		}
-		loading = false;
+		sendCodeToServer(editor.getEditorValue(), currentLanguage, currentCompiler, currentExecutor)
+			.then((result: Result) => {
+				lastResult = result;
+			})
+			.catch((err: Error) => {
+				lastResult = {
+					stdout: 'Server error; Could not run the code.',
+					stderr: ''
+				};
+			})
+			.finally(() => {
+				loading = false;
+			});
 	};
 
 	const saveToLocalStorage = () => {
@@ -196,7 +170,12 @@
 	<div class="border border-gray-300 grow flex flex-col">
 		<div class="ml-2 h-10 flex items-center overflow-x-auto">
 			<button class="btn btn-blue whitespace-nowrap" on:click={compile}>Run (Ctrl+S)</button>
-			<select bind:value={currentLanguage} on:change={() => languageChange()} name="language" class="ml-2">
+			<select
+				bind:value={currentLanguage}
+				on:change={() => languageChange()}
+				name="language"
+				class="ml-2"
+			>
 				{#each Object.values(languages) as language}
 					<option value={language.name}>{language.text}</option>
 				{/each}
