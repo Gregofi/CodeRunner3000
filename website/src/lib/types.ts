@@ -22,3 +22,8 @@ export type IPayload = {
 	program_args?: string[];
 	stdin?: string;
 };
+
+export type Result = {
+	stdout: string;
+	stderr: string;
+};
