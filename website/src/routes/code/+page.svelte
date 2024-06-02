@@ -13,25 +13,30 @@
 	let editor: MonacoEditor;
 	let loading = false;
 	let timer: ReturnType<typeof setTimeout>;
-	let current_language = 'lua';
-	let current_executor: string | undefined;
-	let current_compiler: string | undefined;
+
+	// It would be nice if we could bind these guys together into an object,
+	// but it seems that the bind:value things doesn't really work with it.
+	let currentLanguage = 'lua';
+	let currentExecutor: string | undefined;
+	let currentCompiler: string | undefined;
+
 	let showModal = false;
 	let lastUrl = '';
 	let vimChecker: HTMLInputElement;
+
 	const delay = 1000;
 
 	const createPayload = (): IPayload => {
 		const code = editor.getEditorValue();
-		const language = languages[current_language];
+		const language = languages[currentLanguage];
 		const payload: IPayload = {
 			code,
 			language: language.server_name,
-			// the current_x stays even when changing to language that
-			// has no compiler/interpreter, so chech if the language even
+			// the currentX stays even when changing to language that
+			// has no compiler/interpreter, so check if the language even
 			// needs interpreter/compiler.
-			compiler: language.compilers ? current_compiler : undefined,
-			executor: language.executors ? current_executor : undefined
+			compiler: language.compilers ? currentCompiler : undefined,
+			executor: language.executors ? currentExecutor : undefined
 		};
 		return payload;
 	};
@@ -62,7 +67,7 @@
 	const saveToLocalStorage = () => {
 		let programsString = localStorage.getItem('saved_programs') ?? '{}';
 		let programs = JSON.parse(programsString);
-		programs[current_language] = editor.getEditorValue();
+		programs[currentLanguage] = editor.getEditorValue();
 		localStorage.setItem('saved_programs', JSON.stringify(programs));
 	};
 
@@ -72,7 +77,7 @@
 		const savedCode = localStorage.getItem('saved_programs');
 		if (savedCode) {
 			const programs = JSON.parse(savedCode);
-			const code = programs[current_language];
+			const code = programs[currentLanguage];
 			if (code) {
 				editor.setEditorValue(code);
 				return true;
@@ -96,19 +101,19 @@
 	};
 
 	const renderDefaultCode = () => {
-		const editor_name = languages[current_language].editor_name;
+		const editor_name = languages[currentLanguage].editor_name;
 		const defaultCode = defaultPrograms[editor_name];
 		if (defaultCode) {
 			editor.setEditorValue(defaultCode);
 		} else {
-			console.log('Unable to found default program for language: ' + current_language);
+			console.log('Unable to found default program for language: ' + currentLanguage);
 		}
 	};
 
 	const languageChange = (conf: { compiler?: string; executor?: string } = {}) => {
-		current_compiler = conf.compiler ?? languages[current_language].compilers?.[0];
-		current_executor = conf.executor ?? languages[current_language].executors?.[0];
-		const language = languages[current_language].editor_name;
+		currentCompiler = conf.compiler ?? languages[currentLanguage].compilers?.[0];
+		currentExecutor = conf.executor ?? languages[currentLanguage].executors?.[0];
+		const language = languages[currentLanguage].editor_name;
 		editor.changeLanguage(language);
 		const loaded = loadFromLocalStorage();
 		if (!loaded) {
@@ -165,10 +170,10 @@
 				const code = input.code;
 				const language = input.language;
 				if (code && language && languages[language] !== undefined) {
-					current_executor = input.executor;
-					current_compiler = input.compiler;
-					current_language = language;
-					languageChange({ compiler: current_compiler, executor: current_executor });
+					currentExecutor = input.executor;
+					currentCompiler = input.compiler;
+					currentLanguage = language;
+					languageChange({ compiler: currentCompiler, executor: currentExecutor });
 					editor.setEditorValue(code);
 				}
 			} else {
@@ -215,21 +220,21 @@
 	<div class="border border-gray-300 grow flex flex-col">
 		<div class="ml-2 h-10 flex items-center overflow-x-auto">
 			<button class="btn btn-blue whitespace-nowrap" on:click={compile}>Run (Ctrl+S)</button>
-			<select bind:value={current_language} on:change={languageChange} name="language" class="ml-2">
+			<select bind:value={currentLanguage} on:change={languageChange} name="language" class="ml-2">
 				{#each Object.values(languages) as language}
 					<option value={language.name}>{language.text}</option>
 				{/each}
 			</select>
-			{#if languages[current_language].executors?.length > 0}
-				<select bind:value={current_executor} name="executor" class="ml-2">
-					{#each languages[current_language].executors as executor}
+			{#if languages[currentLanguage].executors?.length > 0}
+				<select bind:value={currentExecutor} name="executor" class="ml-2">
+					{#each languages[currentLanguage].executors as executor}
 						<option value={executor}>{executor}</option>
 					{/each}
 				</select>
 			{/if}
-			{#if languages[current_language].compilers?.length > 0}
-				<select bind:value={current_compiler} name="compiler" class="ml-2">
-					{#each languages[current_language].compilers as compiler}
+			{#if languages[currentLanguage].compilers?.length > 0}
+				<select bind:value={currentCompiler} name="compiler" class="ml-2">
+					{#each languages[currentLanguage].compilers as compiler}
 						<option value={compiler}>{compiler}</option>
 					{/each}
 				</select>
