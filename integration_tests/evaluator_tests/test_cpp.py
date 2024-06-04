@@ -31,7 +31,7 @@ int main() {
 }
 """)
 
-    payload.compiler_args = ['']
+    payload['compiler_args'] = ['']
     response = requests.post(EVALUATOR_ADDRESS, json=payload)
     assert response.status_code == 200
     values = response.json()
