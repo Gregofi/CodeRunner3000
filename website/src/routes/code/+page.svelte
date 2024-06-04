@@ -119,6 +119,7 @@
 	};
 
 	const languageChange = (conf: { compiler?: string; executor?: string } = {}) => {
+		langObj = languages[currentLanguage];
 		currentCompiler = conf.compiler ?? langObj.compilers?.[0];
 		currentExecutor = conf.executor ?? langObj.executors?.[0];
 		compilerOptions = '';
