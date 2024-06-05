@@ -1,4 +1,6 @@
-import type { LangKey, Result } from '$lib/types';
+import type { LangKey, LinkData, Result } from '$lib/types';
+
+const TOO_MANY_REQUESTS = 429;
 
 export const sendCodeToServer = async (
 	code: string,
@@ -27,5 +29,45 @@ export const sendCodeToServer = async (
 		return await response.json();
 	} else {
 		throw new Error('Could not evaluate');
+	}
+};
+
+export const generateNewLink = async (data: LinkData): Promise<string> => {
+	const body = JSON.stringify(data);
+
+	const response = await fetch('/api/link', {
+		method: 'POST',
+		body,
+		mode: 'cors',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json'
+		}
+	});
+
+	if (response.ok) {
+		const { key } = await response.json();
+		return key;
+	} else if (response.status === TOO_MANY_REQUESTS) {
+		throw new Error('Too many requests, please try again later.');
+	} else {
+		throw new Error('Could not generate link');
+	}
+};
+
+export const getLinkData = async (key: string): Promise<LinkData> => {
+	const response = await fetch(`/api/link/${key}`, {
+		method: 'GET',
+		mode: 'cors',
+		headers: {
+			Accept: 'application/json'
+		}
+	});
+
+	if (response.ok) {
+		const { value } = await response.json();
+		return JSON.parse(value);
+	} else {
+		throw new Error('Could not fetch link data');
 	}
 };
