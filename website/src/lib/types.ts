@@ -17,4 +17,22 @@ export type Result = {
 	stderr: string;
 };
 
+/// What the user has currently selected.
+/// BEWARE: This is also saved together with
+/// the sent code in the URL, so everything
+/// you add warants a change of all items
+/// in the DB, unless you make it optional.
+export type Selection = {
+	language: LangKey;
+	executor?: string;
+	compiler?: string;
+	compilerOptions?: string;
+};
+
+/// Data that are saved in the DB under links
+export type LinkData = {
+	selection: Selection;
+	code: string;
+};
+
 export type LangKey = 'lua' | 'python3' | 'racket' | 'bash' | 'c' | 'cpp' | 'rust' | 'mjolnir';

@@ -1,14 +1,18 @@
 <script lang="ts">
+    import { toast } from '@zerodevx/svelte-toast';
 	import { onMount } from 'svelte';
 	import MonacoEditor from '$lib/monaco/MonacoEditor.svelte';
 	import OutputBox from '$lib/OutputBox.svelte';
 	import { defaultPrograms } from '$lib/defaultPrograms';
 	import { getSettings, setVimMode } from '$lib/settings';
-	import type { Result, LangKey } from '$lib/types';
+	import type { Result, LangKey, Selection, LinkData } from '$lib/types';
 	import { languages } from '$lib/constants';
-	import { sendCodeToServer } from '$lib/remoteUtils';
+	import { sendCodeToServer, getLinkData, generateNewLink } from '$lib/remoteUtils';
+    import { errorToast } from '$lib/toastPresets';
+	import ShareBox from '$lib/ShareBox.svelte';
 
 	let editor: MonacoEditor;
+	let shareBox: ShareBox;
 
 	let loading = false;
 	let lastResult: Result = {
@@ -27,6 +31,13 @@
 	let currentExecutor: string | undefined;
 	let currentCompiler: string | undefined;
 	let compilerOptions: string | undefined;
+
+	const getSelection = (): Selection => ({
+		language: currentLanguage,
+		executor: currentExecutor,
+		compiler: currentCompiler,
+		compilerOptions: compilerOptions
+	});
 
 	$: langObj = languages[currentLanguage];
 
@@ -88,6 +99,27 @@
 		return false;
 	};
 
+	/// Tries to load code from query param. Returns true if it was present and loaded.
+	const loadFromLink = async (): Promise<boolean> => {
+		const id = window.location.pathname.split('/').pop();
+		if (!id) {
+			return false;
+		}
+
+		const { selection, code } = await getLinkData(id);
+		if (selection && code) {
+			currentLanguage = selection.language;
+			currentCompiler = selection.compiler;
+			currentExecutor = selection.executor;
+			compilerOptions = selection.compilerOptions;
+			editor.setEditorValue(code);
+		} else {
+            toast.push('Error while loading link data; they seem invalid', errorToast);
+		}
+
+		return true;
+	};
+
 	const setEditorDebounce = () => {
 		if (!editor) {
 			return;
@@ -142,8 +174,23 @@
 		}
 	};
 
+	const handleShare = async () => {
+        try {
+            const linkData: LinkData = {
+                selection: getSelection(),
+                code: editor.getEditorValue()
+            };
+
+            const id = await generateNewLink(linkData);
+            const url = `${window.location.protocol}//${window.location.host}/code/s/${id}`;
+            shareBox.open(url);
+        } catch (e) {
+            toast.push('Error while generating link', errorToast);
+        }
+	};
+
 	onMount(() => {
-		window.addEventListener('editor-loaded', () => {
+		window.addEventListener('editor-loaded', async () => {
 			const settings = getSettings();
 			setEditorDebounce();
 			// Compile on Ctrl+s
@@ -162,7 +209,8 @@
 
 			// And overwrite it with the saved program if it exists.
 			const loadedFromLocal = loadFromLocalStorage();
-			if (!loadedFromLocal) {
+			const loadedFromLink = await loadFromLink();
+			if (!loadedFromLocal && !loadedFromLink) {
 				renderDefaultCode();
 			}
 			compile();
@@ -229,6 +277,11 @@
 					placeholder="compiler options..."
 				/>
 			{/if}
+			<!-- <span on:click={generateShare} class="ml-2">Share</span> -->
+			<span>
+				<button class="ml-2" on:click={handleShare}>Share</button>
+				<ShareBox bind:this={shareBox} />
+			</span>
 		</div>
 		<div class="grow data-pw-monaco-editor-main">
 			<MonacoEditor bind:this={editor} />

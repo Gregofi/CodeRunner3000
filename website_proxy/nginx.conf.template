@@ -25,6 +25,8 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Prefix /;
+            # we assume that there is another proxy in front of this
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
             proxy_pass http://website;
         }
