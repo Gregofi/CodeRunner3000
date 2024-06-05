@@ -31,6 +31,7 @@ services:
     privileged: true
     environment:
       - RUST_LOG=debug
+      - LINKS_DB_PORT=7900
     healthcheck:
       test: ["CMD", "curl", "-f", "localhost:7800/liveness"]
       interval: 5s
@@ -49,3 +50,9 @@ services:
       - WEBSITE_PROXY_NGINX_STATUS_TOKEN=super_secret # Change in prod!
     ports:
       - "127.0.0.1:9898:9898"
+
+  links-keyval:
+    build: keyval
+    environment:
+      - PORT=7900
+      - CONFIG_NAME=links

@@ -1,5 +1,6 @@
 mod nsjail;
 mod spec;
+mod links;
 use dotenv::dotenv;
 use metrics::{counter, describe_counter, describe_gauge, Label};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
@@ -303,6 +304,12 @@ async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
                     Ok(response)
                 }
             }
+        }
+        (&Method::POST, "/api/v1/generate_link") => {
+            let body = req.body();
+            let mut response = Response::new(Body::from(links::generate_link(body)?));
+            *response.status_mut() = StatusCode::OK;
+            Ok(response)
         }
         (&Method::GET, "/metrics") => {
             let mut response = Response::new(Body::from(PROMETHEUS.render()));
