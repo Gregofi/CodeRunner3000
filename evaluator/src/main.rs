@@ -15,6 +15,7 @@ use std::io::prelude::*;
 use std::net::SocketAddr;
 use std::str;
 use std::sync::atomic::AtomicUsize;
+use std::sync::{Arc, Mutex};
 
 use rand::{distributions::Alphanumeric, Rng};
 
@@ -356,6 +357,10 @@ async fn main() -> Result<()> {
         "submitted_program_errors_total",
         "Number of errors in the user submitted program"
     );
+
+    let redis_url = std::env::var("REDIS_LINKS_URL").expect("REDIS_LINKS_URL is not set");
+    let redis_client = redis::Client::open(redis_url.clone())?;
+    let redis = Arc::new(redis::aio::ConnectionManager::new(redis_client).await?);
 
     let make_svc =
         make_service_fn(|_conn| async { Ok::<_, hyper::Error>(service_fn(handle_connection)) });
