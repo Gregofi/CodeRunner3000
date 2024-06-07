@@ -22,9 +22,11 @@ use rand::{distributions::Alphanumeric, Rng};
 use anyhow::{anyhow, bail, Context, Result};
 
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use hyper::{Body, body, Method, Request, Response, Server, StatusCode};
 
 use serde::{Deserialize, Serialize};
+
+use redis::{RedisResult, Client};
 
 use lazy_static::lazy_static;
 
@@ -307,7 +309,7 @@ async fn handle_connection(req: Request<Body>) -> Result<Response<Body>> {
             }
         }
         (&Method::POST, "/api/v1/generate_link") => {
-            let body = req.body();
+            let body: String = String::from_utf8(body::to_bytes(req.body()).await?.to_vec())?;
             let mut response = Response::new(Body::from(links::generate_link(body)?));
             *response.status_mut() = StatusCode::OK;
             Ok(response)
@@ -359,11 +361,15 @@ async fn main() -> Result<()> {
     );
 
     let redis_url = std::env::var("REDIS_LINKS_URL").expect("REDIS_LINKS_URL is not set");
-    let redis_client = redis::Client::open(redis_url.clone())?;
-    let redis = Arc::new(redis::aio::ConnectionManager::new(redis_client).await?);
+    let redis_client = redis::Client::open(format!("redis://{}", redis_url.clone()))?;
+    let mut redis_connection = redis_client.get_multiplexed_tokio_connection().await?;
 
     let make_svc =
-        make_service_fn(|_conn| async { Ok::<_, hyper::Error>(service_fn(handle_connection)) });
+        make_service_fn(|_conn| async {
+            Ok::<_, hyper::Error>(service_fn(|req| async {
+                handle_connection(req).await
+            }))
+        });
     let addr = SocketAddr::from(([0, 0, 0, 0], 7800));
     let server = Server::bind(&addr).serve(make_svc);
 
