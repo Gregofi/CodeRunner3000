@@ -81,5 +81,10 @@ export const defaultPrograms: IPrograms = {
 		'fn main() {',
 		'    println!("{}", fact(5));',
 		'}'
+	].join('\n'),
+	mjolnir: [
+		'fn fact(n: Int) -> Int = if n == 0 { 1 } else { n * fact(n - 1) }',
+		'',
+		'fn main() -> Int = fact(5)'
 	].join('\n')
 };

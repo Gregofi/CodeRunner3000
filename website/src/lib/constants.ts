@@ -50,5 +50,12 @@ export const languages: { [key in LangKey]: ILanguage } = {
 		editor_name: 'rust',
 		text: 'Rust',
 		compilers: ['rustc-bookworm']
+	},
+	mjolnir: {
+		name: 'mjolnir',
+		server_name: 'mjolnir',
+		editor_name: 'mjolnir',
+		text: 'Mjolnir',
+		executors: ['master']
 	}
 };
