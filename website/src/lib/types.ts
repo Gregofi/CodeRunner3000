@@ -17,4 +17,4 @@ export type Result = {
 	stderr: string;
 };
 
-export type LangKey = 'lua' | 'python3' | 'racket' | 'bash' | 'c' | 'cpp' | 'rust';
+export type LangKey = 'lua' | 'python3' | 'racket' | 'bash' | 'c' | 'cpp' | 'rust' | 'mjolnir';

@@ -73,3 +73,11 @@
   commands:
     - cp ${SOURCE_FILE} source.rkt
     - ${EXECUTOR} source.rkt ${SOURCE_ARGS}
+
+- name: mjolnir
+  executors:
+  - name: master
+    path: /opt/evaluator/compilers/mjolnir/target/release/mjolnir_rust
+  commands:
+    - cp ${SOURCE_FILE} source.mjl
+    - ${EXECUTOR} interpret source.mjl

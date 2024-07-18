@@ -47,6 +47,13 @@ COPY ./scripts/setup_racket.sh ./scripts/setup_racket.sh
 
 RUN ./scripts/setup_racket.sh
 
+# ====== Mjolnir build image ======
+FROM rust:1.79-bookworm as mjolnir-builder
+
+COPY ./scripts/setup_mjolnir.sh ./scripts/setup_mjolnir.sh
+
+RUN ./scripts/setup_mjolnir.sh
+
 # ====== Runtime image ======
 FROM debian:bookworm-slim
 
@@ -78,6 +85,7 @@ COPY ./scripts/entrypoint.sh scripts/entrypoint.sh
 # compilers and interpreters
 COPY --from=lua-builder /opt/evaluator/compilers/lua /opt/evaluator/compilers/lua
 COPY --from=racket-builder /opt/evaluator/compilers/racket /opt/evaluator/compilers/racket
+COPY --from=mjolnir-builder /opt/evaluator/compilers/mjolnir /opt/evaluator/compilers/mjolnir
 
 EXPOSE 7800
 
