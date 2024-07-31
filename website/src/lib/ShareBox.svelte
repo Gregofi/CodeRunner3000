@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-    import { toast } from '@zerodevx/svelte-toast';
-    import { errorToast } from '$lib/toastPresets';
+	import { toast } from '@zerodevx/svelte-toast';
+	import { errorToast } from '$lib/toastPresets';
 
 	let dialog: HTMLDialogElement;
 	// Used as a reference to prevent clicks on the dialog from closing it.
@@ -32,7 +32,7 @@
 				close();
 			})
 			.catch((err) => {
-                toast.push('Failed to copy to clipboard, do we have permissions?', errorToast);
+				toast.push('Failed to copy to clipboard, do we have permissions?', errorToast);
 				console.error('Failed to copy to clipboard', err);
 				close();
 			});
@@ -51,14 +51,19 @@
 	});
 </script>
 
-<dialog class="border border-gray-400 bg-white min-w-[80%]" bind:this={dialog}>
+<dialog
+	data-pw="share-dialog"
+	class="border border-gray-400 bg-white min-w-[80%]"
+	bind:this={dialog}
+>
 	<div class="dialog-inner w-full h-full p-2" bind:this={dialogInner}>
 		<div class="flex justify-between mb-3">
 			<span class="font-bold text-green-800">Your link is ready!</span>
-			<button on:click={close}>&#x2716</button>
+			<button name="share-dialog-close-btn" on:click={close}>&#x2716</button>
 		</div>
 		<div class="flex">
 			<input
+				name="share-dialog-link-input"
 				type="text"
 				readonly
 				class="grow border border-gray-200 p-2 mr-2"
@@ -66,6 +71,7 @@
 				bind:this={linkInput}
 			/>
 			<button
+				name="share-dialog-copy-btn"
 				class="font-bold py-2 px-4 bg-green-700 text-white hover:bg-green-900"
 				on:click={toClipBoard}>Copy</button
 			>

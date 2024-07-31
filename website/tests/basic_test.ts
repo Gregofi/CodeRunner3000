@@ -1,10 +1,17 @@
 import { test, expect } from '@playwright/test';
 
+declare global {
+	interface Window {
+		getMonacoEditorValue: () => string;
+		setMonacoEditorValue: (value: string) => void;
+	}
+}
+
 test('test basic lang, compiler and executor.', async ({ page }) => {
 	await page.goto('/code', { waitUntil: 'networkidle' });
 
 	const monacoValue1 = await page.evaluate(() => window.getMonacoEditorValue());
-	await expect(monacoValue1).toBeTruthy();
+	expect(monacoValue1).toBeTruthy();
 
 	const language = page.locator('[name="language"]');
 	await expect(language).toBeVisible();

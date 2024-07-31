@@ -1,7 +1,6 @@
 import requests
 import random
 import string
-import time
 
 
 def generate_random_string(length: int):
@@ -20,11 +19,11 @@ GET_LINK = "http://evaluator:7800/api/v1/link/get/"
 
 def test_links():
     # 20 is the allowed burst by rate limiter
-    for i in range(50):
+    for i in range(20):
         # random string
         data = generate_random_string(10)
         response = requests.post(NEW_LINK, data=data, headers={"X-Forwarded-For": "1.1.1.1"})
-        assert response.status_code == 200
+        assert response.status_code == 200, f"try {i}"
 
         key = response.json()["key"]
         
@@ -35,3 +34,6 @@ def test_links():
     
     response = requests.post(NEW_LINK, data="test", headers={"X-Forwarded-For": "1.1.1.1"})
     assert response.status_code == 429
+
+    response = requests.post(NEW_LINK, data="test", headers={"X-Forwarded-For": "2.1.1.1"})
+    assert response.status_code == 200

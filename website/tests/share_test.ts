@@ -1,4 +1,3 @@
-/*
 import { test, expect } from '@playwright/test';
 
 test('test generating share link and accessing it', async ({ page }) => {
@@ -10,36 +9,33 @@ test('test generating share link and accessing it', async ({ page }) => {
 	await executor.selectOption({ value: 'lua5.1.5' });
 
 	// edit the code a bit
-	await page.evaluate(() => window.setMonacoEditorValue('print("hello")'));
+	await page.evaluate(() => window.setMonacoEditorValue('print("hello from lua5.1.5")'));
 
-	const modalButton = page.locator('[name="share-modal-btn"]');
-	await modalButton.click();
+	const triggerShareBtn = page.locator('[name="share-dialog-btn"]');
+	const shareDialog = page.locator('[data-pw="share-dialog"]');
+	const closeButton = page.locator('[name="share-dialog-close-btn"]');
 
-	const shareLink = await page.locator('[name="share-input"]').inputValue();
-	expect(shareLink).toBeTruthy();
+	await expect(shareDialog).not.toBeVisible();
 
-	// close modal
-	const closeButton = page.locator('[name="share-modal-close-btn"]');
+	await triggerShareBtn.click();
+	await expect(shareDialog).toBeVisible();
+
+	const link = await page.locator('[name="share-dialog-link-input"]').inputValue();
+	expect(link).toBeTruthy();
+
 	await closeButton.click();
+	await expect(shareDialog).not.toBeVisible();
 
-	// TODO: probably check the whole div?
-	await expect(page.locator('[name="share-input"]')).not.toBeVisible();
-
-	const editorValueBefore = await page.evaluate(() => window.getMonacoEditorValue());
-
-	// change values so that the share link changes
-
+	// change values because the previous code will be in local storage
 	const language = page.locator('[name="language"]');
 	await expect(language).toBeVisible();
 	await language.selectOption({ value: 'python3' });
-
-	const editorValuePython = await page.evaluate(() => window.getMonacoEditorValue());
-	expect(editorValuePython).not.toEqual(editorValueBefore);
+	await page.evaluate(() => window.setMonacoEditorValue('print("hello from python3")'));
 
 	// go to the share link
-	await page.goto(shareLink!, { waitUntil: 'networkidle' });
+	await page.goto(link, { waitUntil: 'networkidle' });
 	const editorValueAfter = await page.evaluate(() => window.getMonacoEditorValue());
-	expect(editorValueBefore).toEqual(editorValueAfter);
+	expect(editorValueAfter).toEqual('print("hello from lua5.1.5")');
 
 	const languageAfter = page.locator('[name="language"]');
 	await expect(languageAfter).toBeVisible();
@@ -48,8 +44,4 @@ test('test generating share link and accessing it', async ({ page }) => {
 	const executorAfter = page.locator('[name="executor"]');
 	await expect(executorAfter).toBeVisible();
 	await expect(executorAfter).toHaveValue('lua5.1.5');
-
-	const codeAfter = await page.evaluate(() => window.getMonacoEditorValue());
-	expect(codeAfter).toEqual('print("hello")');
 });
-*/
