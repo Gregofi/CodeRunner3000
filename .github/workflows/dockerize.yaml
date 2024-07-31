@@ -49,3 +49,16 @@ jobs:
           dockerhub-login: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
           app-name: statserver
+
+  dockerize_links_valkey:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push image
+        uses: ./.github/actions/push-to-dockerhub
+        with:
+          dockerhub-login: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          app-name: valkey
+        env:
+          CONFIG_NAME: links
