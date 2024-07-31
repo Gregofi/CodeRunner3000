@@ -1,7 +1,8 @@
 FROM golang:1.21.4-alpine3.18 AS builder
 
 WORKDIR /app
-COPY go.mod main.go .
+COPY go.mod go.sum .
+COPY *.go .
 
 RUN go build
 

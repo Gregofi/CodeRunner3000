@@ -50,6 +50,8 @@ services:
     environment:
       - PORT=9898
       - WEBSITE_PROXY_NGINX_STATUS_TOKEN=super_secret # Change in prod!
+      - REDIS_LINKS_HOST=links-valkey
+      - REDIS_LINKS_PORT=7900
     ports:
       - "127.0.0.1:9898:9898"
 
