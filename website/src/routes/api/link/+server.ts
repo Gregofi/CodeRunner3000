@@ -27,9 +27,9 @@ export async function POST({ request, getClientAddress }: RequestEvent): Promise
 	});
 
 	if (!response.ok) {
-    if (response.status === TOO_MANY_REQUESTS) {
-      throw new Error('Too many requests to link generator, try again later');
-    }
+		if (response.status === TOO_MANY_REQUESTS) {
+			throw new Error('Too many requests to link generator, try again later');
+		}
 
 		throw new Error('Failed to fetch link data');
 	}

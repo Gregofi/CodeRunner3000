@@ -1,4 +1,3 @@
-import type { LinkData } from '$lib/types';
 import type { RequestEvent } from '@sveltejs/kit';
 
 const backendUrl = import.meta.env.VITE_CODERUNNER_BACKEND_URL as string;

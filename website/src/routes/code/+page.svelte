@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { toast } from '@zerodevx/svelte-toast';
+	import { toast } from '@zerodevx/svelte-toast';
 	import { onMount } from 'svelte';
 	import MonacoEditor from '$lib/monaco/MonacoEditor.svelte';
 	import OutputBox from '$lib/OutputBox.svelte';
@@ -8,7 +8,7 @@
 	import type { Result, LangKey, Selection, LinkData } from '$lib/types';
 	import { languages } from '$lib/constants';
 	import { sendCodeToServer, getLinkData, generateNewLink } from '$lib/remoteUtils';
-    import { errorToast } from '$lib/toastPresets';
+	import { errorToast } from '$lib/toastPresets';
 	import ShareBox from '$lib/ShareBox.svelte';
 
 	let editor: MonacoEditor;
@@ -101,7 +101,8 @@
 
 	/// Tries to load code from query param. Returns true if it was present and loaded.
 	const loadFromLink = async (): Promise<boolean> => {
-		const id = window.location.pathname.split('/').pop();
+		// the id is the last part of the path, only iff the path is /code/s/{id}
+		const id = /\/code\/s\/([^/]+)$/.exec(window.location.pathname)?.[1];
 		if (!id) {
 			return false;
 		}
@@ -114,7 +115,7 @@
 			compilerOptions = selection.compilerOptions;
 			editor.setEditorValue(code);
 		} else {
-            toast.push('Error while loading link data; they seem invalid', errorToast);
+			toast.push('Error while loading link data; they seem invalid', errorToast);
 		}
 
 		return true;
@@ -175,22 +176,39 @@
 	};
 
 	const handleShare = async () => {
-        try {
-            const linkData: LinkData = {
-                selection: getSelection(),
-                code: editor.getEditorValue()
-            };
+		try {
+			const linkData: LinkData = {
+				selection: getSelection(),
+				code: editor.getEditorValue()
+			};
 
-            const id = await generateNewLink(linkData);
-            const url = `${window.location.protocol}//${window.location.host}/code/s/${id}`;
-            shareBox.open(url);
-        } catch (e) {
-            toast.push('Error while generating link', errorToast);
-        }
+			const id = await generateNewLink(linkData);
+			const url = `${window.location.protocol}//${window.location.host}/code/s/${id}`;
+			shareBox.open(url);
+		} catch (e) {
+			toast.push('Error while generating link', errorToast);
+		}
 	};
 
 	onMount(() => {
 		window.addEventListener('editor-loaded', async () => {
+			console.log('Firing editor-loaded event');
+			// Playwright doesn't have any decent access to monaco, we have to do things
+			// like "click the div, ctrl + a, start typing etc.", so this export is
+			// to make the test easier to write.
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(window as any).getMonacoEditorValue = () => {
+				return editor.getEditorValue();
+			};
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(window as any).setMonacoEditorValue = (value: string) => {
+				editor.setEditorValue(value);
+			};
+
 			const settings = getSettings();
 			setEditorDebounce();
 			// Compile on Ctrl+s
@@ -215,21 +233,9 @@
 			}
 			compile();
 
-			// Playwright doesn't have any decent access to monaco, we have to do things
-			// like "click the div, ctrl + a, start typing etc.", so this export is
-			// to make the test easier to write.
-			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-			// @ts-ignore
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(window as any).getMonacoEditorValue = () => {
-				return editor.getEditorValue();
-			};
-			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-			// @ts-ignore
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(window as any).setMonacoEditorValue = (value: string) => {
-				editor.setEditorValue(value);
-			};
+			console.log('Firing editor-init-done event');
+			const event = new CustomEvent('editor-init-done');
+			window.dispatchEvent(event);
 		});
 	});
 </script>
@@ -279,7 +285,7 @@
 			{/if}
 			<!-- <span on:click={generateShare} class="ml-2">Share</span> -->
 			<span>
-				<button class="ml-2" on:click={handleShare}>Share</button>
+				<button name="share-dialog-btn" class="ml-2" on:click={handleShare}>Share</button>
 				<ShareBox bind:this={shareBox} />
 			</span>
 		</div>

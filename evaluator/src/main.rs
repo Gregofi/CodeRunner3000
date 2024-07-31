@@ -15,7 +15,7 @@ use tower_governor::{
     governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer,
 };
 
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use axum::{routing::get, routing::post, Router};
 

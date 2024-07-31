@@ -4,7 +4,6 @@ use anyhow::{Context, Result};
 use axum::{extract, response};
 use rand::Rng;
 use redis::AsyncCommands;
-use serde::Serialize;
 
 use crate::{AppError, AppState};
 
@@ -38,8 +37,12 @@ pub struct GenerateResponse {
     pub key: String,
 }
 
-async fn save_string_to_redis(mut redis: redis::aio::ConnectionManager, key: String, value: String) -> Result<()> {
-    let crc = crc32fast::hash(&value.as_bytes());
+async fn save_string_to_redis(
+    mut redis: redis::aio::ConnectionManager,
+    key: String,
+    value: String,
+) -> Result<()> {
+    let crc = crc32fast::hash(value.as_bytes());
     let saved_data = SavedData {
         p: value,
         crc,
@@ -49,20 +52,25 @@ async fn save_string_to_redis(mut redis: redis::aio::ConnectionManager, key: Str
     Ok(())
 }
 
-async fn read_string_from_redis(mut redis: redis::aio::ConnectionManager, key: String) -> Result<Option<String>> {
+async fn read_string_from_redis(
+    mut redis: redis::aio::ConnectionManager,
+    key: String,
+) -> Result<Option<String>> {
     let data: Option<String> = redis.get(&key).await?;
     match data {
         Some(data) => {
             let saved_data: SavedData = serde_json::from_str(&data)?;
             if saved_data.v == 1 {
-                let crc = crc32fast::hash(&saved_data.p.as_bytes());
+                let crc = crc32fast::hash(saved_data.p.as_bytes());
                 if crc == saved_data.crc {
                     Ok(Some(saved_data.p))
                 } else {
                     Err(anyhow::anyhow!("CRC mismatch"))
                 }
             } else {
-                Err(anyhow::anyhow!("Unknown version, only version 1 is supported"))
+                Err(anyhow::anyhow!(
+                    "Unknown version, only version 1 is supported"
+                ))
             }
         }
         None => Ok(None),

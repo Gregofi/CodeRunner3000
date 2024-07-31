@@ -1,0 +1,6 @@
+services:
+  test:
+    build: ./integration_tests/evaluator_tests
+    depends_on:
+      evaluator:
+        condition: service_healthy
