@@ -16,6 +16,33 @@ There may also be a `"compiler"` member.
 
 ## Evaluator
 
+There are two parts of the evaluator that need to be edited.
+First setups the compiler/interpreter.
+Second tells the evaluator how to run the code.
+
+### Infrastructure
+
+The infra folder contains configs how to build the compilers and interpreters.
+To add a new language add a folder with the name of the language in the `infra`.
+In the folder, there should be a `setup.sh` script that will install it to the `/opt/evaluator/compilers/<name>` (interpreters too go into `compilers` ;).
+Note that all dependencies must be installed in the same folder.
+The final image will just copy this folder to the final image.
+Look at the `lua` folder for an example.
+
+Keep in mind that all commands run from jail (using `nsjail`).
+Sometimes, some commands needs some folder or such that is not available, and it may take some debugging to make it work.
+You can run the `nsjail` with production conf. by doing `nsjail --config evaluator/config/userspace.cfg`.
+Edit the timelimit and remove the logging line to ease debugging.
+
+After adding the folder, add a table to the `infra/languages/config.toml`.
+The name of the table should be the name of the language.
+Mandatory fields:
+- `image`: The name of the image that will be used to build the language (for example lua uses image with gcc to compile the interpreter).
+
+### Runtime
+
+This tells the evaluator how to invoke the compiler or interpreter.
+
 An example of configuration for the _Lua_ programming language:
 ```yaml
 - name: lua
@@ -69,21 +96,6 @@ before the command is executed.
   `compiler`.
 
 Configs are located in `/evaluator/config/config.yaml`.
-
-### Getting the compiler/interpreter.
-
-Some languages use the easy way and just install the compiler/interpreter via
-`apt`. We do it with GCC, look at the example `gcc-bookworm`. If you want to
-have specific version, then you would have to build it/download it, and put it
-into the Evaluator docker image. We do this for Lua, you  can inspire yourself
-from there. If you do install it by yourself, please try putting all necessary
-code into `/opt/evaluator/compilers` (even if it is an interpreter).
-
-Keep in mind that all commands run from jail (using `nsjail`). Sometimes, some
-commands needs some folder or such that is not available, and it may take some
-debugging to make it work. You can run the `nsjail` with production conf. by
-doing `nsjail --config evaluator/config/userspace.cfg`. Edit the timelimit and
-remove the logging line to ease debugging.
 
 ## Website
 

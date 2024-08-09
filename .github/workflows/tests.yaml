@@ -1,13 +1,25 @@
-name: integration_tests
+name: Build, Lint and Test
 
 on: [pull_request]
 
 jobs:
+  infra-changed:
+    runs-on: ubuntu-latest
+    name: Get all changed files in infrastructure
+    outputs:
+      infra_changes: ${{ steps.changed-files.outputs.changed_files }}
+    steps:
+    - uses: actions/checkout@v4
+    # Store the output of the previous step in a variable
+    - name: Store the output
+      id: changed-files
+      run: echo "changed_files=${{ steps.changed-files.outputs.files }}" >> "$GITHUB_OUTPUT"
+
   format-evaluator:
     name: Format evaluator
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build
         run: |
           cd evaluator
@@ -18,7 +30,7 @@ jobs:
     needs: format-evaluator
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build
         run: |
           cd evaluator
@@ -29,25 +41,33 @@ jobs:
   evaluator-integration-tests:
     name: Evaluator
     needs: build-evaluator
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: dc build and test
+        uses: actions/checkout@v4
+      - name: Get changed files in infra folder
+        id: changed-infra
+        uses: tj-actions/changed-files@v44
+        with:
+          files: evaluator/infra/**
+      - name: Maybe build infra
+        if: ${{ steps.changed-infra.outputs.any_changed }} == 'true'
         run: |
-          docker compose -f compose.yaml -f integration_tests/evaluator.yaml build
-          docker compose -f compose.yaml -f integration_tests/evaluator.yaml run test
-          docker compose -f compose.yaml -f integration_tests/evaluator.yaml down
+          cd evaluator/infra
+          make build
+      - name: Run the tests
+        run: |
+          make test
 
   lint-website:
     name: Check lint - website
     runs-on: ubuntu-latest
     steps:
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
           version: 8
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: build and test
         run: |
           cd website
@@ -59,11 +79,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-website
     steps:
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
           version: 8
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: build and test
         run: |
           cd website
@@ -73,13 +93,13 @@ jobs:
 
   E2E-website:
     name: Run E2E tests on website
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: build-website
     steps:
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
           version: 8
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps
         run: |
           cd website

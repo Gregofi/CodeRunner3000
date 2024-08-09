@@ -1,4 +1,4 @@
-name: dockerize and release
+name: Dockerize and Release
 
 on:
   push:
