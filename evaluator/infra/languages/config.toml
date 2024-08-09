@@ -1,0 +1,8 @@
+[lua]
+image = "gcc:13.2-bookworm"
+
+[mjolnir]
+image = "rust:1.79-bookworm"
+
+[racket]
+image = "gcc:13.2-bookworm"

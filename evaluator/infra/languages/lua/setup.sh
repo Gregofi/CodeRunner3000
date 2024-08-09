@@ -3,9 +3,6 @@
 # Install various lua packages to /opt/evaluator/runtimes/
 # must be run as root
 
-mkdir -p /tmp/evaluator-lua
-cd /tmp/evaluator-lua
-
 lua_source() {
     LUA_FTP="https://www.lua.org/ftp/lua-${1}.tar.gz"
     echo $LUA_FTP

@@ -1,0 +1,28 @@
+name: Build infrastructure
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_infra:
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build infrastructure
+        run: |
+          cd evaluator/infra
+          make build
+      - name: Push image
+        run: |
+          cd evaluator/infra
+          make push

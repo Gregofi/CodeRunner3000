@@ -31,29 +31,6 @@ RUN git clone https://github.com/google/nsjail.git /nsjail/ && \
     git checkout 3.4 && \
     make
 
-# ====== Lua build image ======
-FROM gcc:13.2-bookworm as lua-builder
-
-WORKDIR /opt/evaluator/
-    
-COPY ./scripts/setup_lua.sh ./scripts/setup_lua.sh
-
-RUN ./scripts/setup_lua.sh
-
-# ====== Racket build image ======
-FROM gcc:13.2-bookworm as racket-builder
-
-COPY ./scripts/setup_racket.sh ./scripts/setup_racket.sh
-
-RUN ./scripts/setup_racket.sh
-
-# ====== Mjolnir build image ======
-FROM rust:1.79-bookworm as mjolnir-builder
-
-COPY ./scripts/setup_mjolnir.sh ./scripts/setup_mjolnir.sh
-
-RUN ./scripts/setup_mjolnir.sh
-
 # ====== Runtime image ======
 FROM debian:bookworm-slim
 
@@ -83,9 +60,7 @@ COPY config/ config/
 COPY ./scripts/entrypoint.sh scripts/entrypoint.sh
 
 # compilers and interpreters
-COPY --from=lua-builder /opt/evaluator/compilers/lua /opt/evaluator/compilers/lua
-COPY --from=racket-builder /opt/evaluator/compilers/racket /opt/evaluator/compilers/racket
-COPY --from=mjolnir-builder /opt/evaluator/compilers/mjolnir /opt/evaluator/compilers/mjolnir
+COPY --from=ghcr.io/gregofi/compilers-cr3000:latest /opt/evaluator/compilers /opt/evaluator/compilers
 
 EXPOSE 7800
 
