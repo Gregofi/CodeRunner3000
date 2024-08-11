@@ -53,7 +53,7 @@
 
 <dialog
 	data-pw="share-dialog"
-	class="border border-gray-400 bg-white min-w-[80%]"
+	class="border border-gray-400 bg-white sm:min-w-[640px] max-w-4xl"
 	bind:this={dialog}
 >
 	<div class="dialog-inner w-full h-full p-2" bind:this={dialogInner}>
