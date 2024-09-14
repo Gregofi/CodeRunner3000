@@ -35,4 +35,13 @@ export type LinkData = {
 	code: string;
 };
 
-export type LangKey = 'lua' | 'python3' | 'racket' | 'bash' | 'c' | 'cpp' | 'rust' | 'mjolnir';
+export type LangKey =
+	| 'lua'
+	| 'python3'
+	| 'racket'
+	| 'bash'
+	| 'c'
+	| 'cpp'
+	| 'rust'
+	| 'mjolnir'
+	| 'haskell';

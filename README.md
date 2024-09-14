@@ -34,7 +34,7 @@ or create folders in `<cgroup-folder>/pids/NSJAIL` and `<cgroup-folder>/cpu/NSJA
 
 The evaluator builds the compilers and interpreters.
 This can take a while, we do it on every push to master.
-If you want to build it yourself, you can use the following command:
+If you want to build it yourself, you can use the following command from the `evaluator/infra` folder:
 
 ```bash
 make build

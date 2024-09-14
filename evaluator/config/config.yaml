@@ -38,15 +38,15 @@
   commands:
   - "${EXECUTOR} ${EXECUTOR_ARGS} ${SOURCE_FILE} ${SOURCE_ARGS}"
 
-#- name: haskell
-#  compilers:
-#  - name: ghc-bookworm
-#    path: /usr/bin/ghc
-#  commands:
-#  - cp ${SOURCE_FILE} source.hs
-#  - ${COMPILER} source.hs
-#  - rm source.hs
-#  - ./a.out
+- name: haskell
+  compilers:
+  - name: ghc-bookworm
+    path: /usr/bin/ghc
+  commands:
+  - cp ${SOURCE_FILE} source.hs
+  - ${COMPILER} ${COMPILER_ARGS} source.hs > /dev/null
+  - rm source.hs
+  - ./source ${SOURCE_ARGS}
 
 - name: rust
   compilers:
@@ -57,7 +57,7 @@
   # specify the linker path, because debian has symlink /bin/cc -> /etc/alternatives/cc
   - ${COMPILER} -C strip=symbols -C linker=/usr/bin/gcc source.rs
   - rm source.rs
-  - ./source
+  - ./source ${SOURCE_ARGS}
 
 - name: bash
   executors:
