@@ -100,7 +100,7 @@ Configs are located in `/evaluator/config/config.yaml`.
 ## Website
 
 The website also has several places which will have to be edited.
-In the `website/src/routes/code/+page.svelte`, there is an object containing
+In the `website/src/lib/constants.ts`, there is an object containing
 the definitions for each language.
 - `name`: Used mainly for debugging and such.
 - `server_name`: This will be sent as `name` in the payload.
@@ -111,3 +111,10 @@ the definitions for each language.
 
 Then, add a new default program for the language in
 `website/src/lib/defaultPrograms.ts`.
+
+### Syntax highlighting
+
+Monaco editor provides default syntax highlighting for many languages.
+Check if the language is supported [here](https://github.com/microsoft/monaco-editor/tree/main/src/basic-languages).
+
+If not, add a syntax file to `website/src/lib/monaco/syntax-highlight`.

@@ -1,5 +1,7 @@
 import * as monaco from 'monaco-editor';
 
+import './syntax-highlight/haskell';
+
 // Import the workers in a production-safe way.
 // This is different than in Monaco's documentation for Vite,
 // but avoids a weird error ("Unexpected usage") at runtime

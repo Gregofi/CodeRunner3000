@@ -43,7 +43,13 @@ export const languages: { [key in LangKey]: ILanguage } = {
 		text: 'C++',
 		compilers: ['gcc-bookworm']
 	},
-	// haskell: { name: 'haskell', server_name: 'haskell', editor_name: 'Haskell', text: 'Haskell', compilers: ["ghc-bookworm"] },
+	haskell: {
+		name: 'haskell',
+		server_name: 'haskell',
+		editor_name: 'haskell',
+		text: 'Haskell',
+		compilers: ['ghc-bookworm']
+	},
 	rust: {
 		name: 'rust',
 		server_name: 'rust',
