@@ -11,7 +11,7 @@ build:
 	docker compose build
 
 test: build
-	docker compose -f compose.yaml -f integration_tests/evaluator.yaml run test
+	docker compose -f compose.yaml -f integration_tests/evaluator.yaml run --build test
 
 down:
 	docker compose down
