@@ -3,7 +3,7 @@ import requests
 EVALUATOR_ADDRESS = "http://evaluator:7800/api/v1/evaluate"
 
 def generate_haskell(code: str):
-    return {"language": "haskell", "code": code}
+    return {"language": "haskell", "code": code, "compiler": "ghc-bookworm"}
 
 def test_simple_haskell():
     payload = generate_haskell("""
