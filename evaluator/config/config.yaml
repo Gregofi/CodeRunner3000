@@ -77,7 +77,7 @@
 - name: mjolnir
   executors:
   - name: master
-    path: /opt/evaluator/compilers/mjolnir/target/release/mjolnir_rust
+    path: /opt/evaluator/compilers/mjolnir/master/release/mjolnir_rust
   commands:
     - cp ${SOURCE_FILE} source.mjl
     - ${EXECUTOR} interpret source.mjl
