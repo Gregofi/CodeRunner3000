@@ -8,6 +8,13 @@ export const languages: { [key in LangKey]: ILanguage } = {
 		text: 'Lua',
 		executors: ['lua5.4.6', 'lua5.3.6', 'lua5.2.4', 'lua5.1.5']
 	},
+	js: {
+		name: 'js',
+		server_name: 'js',
+		editor_name: 'javascript',
+		text: 'Javascript',
+		executors: ['nodejs-bookworm']
+	},
 	python3: {
 		name: 'python3',
 		server_name: 'python3',

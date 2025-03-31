@@ -14,6 +14,17 @@ export const defaultPrograms: IPrograms = {
 		'',
 		'print(fact(5))'
 	].join('\n'),
+	javascript: [
+		'function fact(n) {',
+		'    if (n === 0) {',
+		'        return 1;',
+		'    } else {',
+		'        return n * fact(n - 1);',
+		'    }',
+		'}',
+		'',
+		'console.log(fact(5));'
+	].join('\n'),
 	scheme: [
 		'#lang racket',
 		'',

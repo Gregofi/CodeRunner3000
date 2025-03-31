@@ -88,11 +88,11 @@ environment variables, they are not and simple find and replace is performed
 before the command is executed.
 - `${SOURCE_FILE}` - Path to a source file which contains the users code from
   the payload. The file is not in current PWD and is read-only.
-- ${SOURCE_ARGS}` - Command line arguments to the users code.
+- `${SOURCE_ARGS}` - Command line arguments to the users code.
 - `${EXECUTOR}` - The executor in the payload.
 - `${EXECUTOR_ARGS}` - Arguments to the executor (for example to run `python3`
   with some additional flag).
-- `${COMPILER}` and ${COMPILER_ARGS} - Same meaning as executor, but for
+- `${COMPILER}` and `${COMPILER_ARGS}` - Same meaning as executor, but for
   `compiler`.
 
 Configs are located in `/evaluator/config/config.yaml`.
