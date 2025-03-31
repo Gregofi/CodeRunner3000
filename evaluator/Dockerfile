@@ -52,6 +52,7 @@ RUN apt-get install -y \
     ghc \
     build-essential \
     python3 \
+    nodejs \
     racket
 
 COPY --from=builder /rust/app/target/release/evaluator bin/evaluator

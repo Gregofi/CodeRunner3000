@@ -37,6 +37,7 @@ export type LinkData = {
 
 export type LangKey =
 	| 'lua'
+	| 'js'
 	| 'python3'
 	| 'racket'
 	| 'bash'

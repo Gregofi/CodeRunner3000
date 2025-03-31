@@ -22,6 +22,13 @@
   - rm source.c
   - ./a.out
 
+- name: js
+  executors:
+  - name: nodejs-bookworm
+    path: /usr/bin/node
+  commands:
+  - "${EXECUTOR} ${EXECUTOR_ARGS} ${SOURCE_FILE} ${SOURCE_ARGS}"
+
 - name: lua
   executors:
   - name: lua5.4.6

@@ -18,7 +18,7 @@ setup_lua_version() {
     pushd lua-${LUA_VERSION}
     make linux
     mkdir -p /opt/evaluator/compilers/lua/
-    cp src/lua /opt/evaluator/compilers/lua/lua${LUA_VERSION}
+    cp src/lua "/opt/evaluator/compilers/lua/lua${LUA_VERSION}"
     popd
 }
 
