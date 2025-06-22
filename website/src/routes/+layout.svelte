@@ -14,8 +14,8 @@
 		<h1 class="hidden sm:inline">Run code in browser</h1>
 		<nav class="justify-between hidden sm:flex">
 			<div>
-				<a class="m-1 underline" href="/code">Code runner</a>
-				<span class="m-1 underline text-gray-400 hover:cursor-not-allowed">Gadgets</span>
+				<a class="m-1 underline" href="/code">Coderunner</a>
+				<a class="m-1 underline" href="/algorithms">Algorithms</a>
 			</div>
 			<a href="https://github.com/Gregofi/CodeRunner3000"
 				><img src="github-mark.svg" alt="GitHub" class="m-1 w-6 h-6" /></a
