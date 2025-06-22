@@ -12,6 +12,9 @@ importers:
         specifier: ^0.4.1
         version: 0.4.1(monaco-editor@0.40.0)
     devDependencies:
+      '@gregofi1/regex-tooling':
+        specifier: ^0.0.4
+        version: 0.0.4
       '@playwright/test':
         specifier: ^1.45.2
         version: 1.45.2
@@ -250,6 +253,9 @@ packages:
   '@eslint/js@8.57.0':
     resolution: {integrity: sha512-Ys+3g2TaW7gADOJzPt83SJtCDhMjndcDMFVQ/Tj9iA1BfJzFKD9mAUXT3OenpuPHbI6P/myECxRJrofUsDx/5g==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  '@gregofi1/regex-tooling@0.0.4':
+    resolution: {integrity: sha512-nrbAY6kvXjQVoXKxKKyg822k4NWKVDhD896HhaHEzocmT5j/Lofhd5aURRXdPLS1BPfTj+EXMik6CG9h6o4RJw==}
 
   '@humanwhocodes/config-array@0.11.14':
     resolution: {integrity: sha512-3T8LkOmg45BV5FICb15QQMsyUSWrQ8AygVfC7ZG32zOalnqrilm018ZVCw0eapXux8FtA33q8PSRSstjee3jSg==}
@@ -1926,6 +1932,8 @@ snapshots:
       - supports-color
 
   '@eslint/js@8.57.0': {}
+
+  '@gregofi1/regex-tooling@0.0.4': {}
 
   '@humanwhocodes/config-array@0.11.14':
     dependencies:
