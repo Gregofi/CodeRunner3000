@@ -1,26 +1,26 @@
 export interface Settings {
-	vimMode: boolean;
+  vimMode: boolean;
 }
 
 const defaultSettings: Settings = {
-	vimMode: false
+  vimMode: false,
 };
 
 export const getSettings = (): Settings => {
-	const settings = localStorage.getItem('settings');
-	if (settings) {
-		return JSON.parse(settings);
-	} else {
-		return defaultSettings;
-	}
+  const settings = localStorage.getItem("settings");
+  if (settings) {
+    return JSON.parse(settings);
+  } else {
+    return defaultSettings;
+  }
 };
 
 export const setVimMode = (vimMode: boolean) => {
-	const settings = getSettings();
-	settings.vimMode = vimMode;
-	setSettings(settings);
+  const settings = getSettings();
+  settings.vimMode = vimMode;
+  setSettings(settings);
 };
 
 export const setSettings = (settings: Settings) => {
-	localStorage.setItem('settings', JSON.stringify(settings));
+  localStorage.setItem("settings", JSON.stringify(settings));
 };
