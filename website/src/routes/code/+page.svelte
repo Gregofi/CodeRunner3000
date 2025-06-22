@@ -11,14 +11,14 @@
 	import { errorToast } from '$lib/toastPresets';
 	import ShareBox from '$lib/ShareBox.svelte';
 
-	let editor: MonacoEditor;
-	let shareBox: ShareBox;
+	let editor: MonacoEditor = $state();
+	let shareBox: ShareBox = $state();
 
-	let loading = false;
-	let lastResult: Result = {
+	let loading = $state(false);
+	let lastResult: Result = $state({
 		stdout: '',
 		stderr: ''
-	};
+	});
 	/// Only last compilation can overwrite the result, otherwise slower code
 	/// executed earlier could overwrite result from faster code executed later.
 	let lastResultId = 0;
@@ -27,10 +27,10 @@
 
 	// It would be nice if we could bind these guys together into an object,
 	// but it seems that the bind:value things doesn't really work with it.
-	let currentLanguage: LangKey = 'lua';
-	let currentExecutor: string | undefined;
-	let currentCompiler: string | undefined;
-	let compilerOptions: string | undefined;
+	let currentLanguage: LangKey = $state('lua');
+	let currentExecutor: string | undefined = $state();
+	let currentCompiler: string | undefined = $state();
+	let compilerOptions: string | undefined = $state();
 
 	const getSelection = (): Selection => ({
 		language: currentLanguage,
@@ -39,9 +39,9 @@
 		compilerOptions: compilerOptions
 	});
 
-	$: langObj = languages[currentLanguage];
+	let langObj = $derived(languages[currentLanguage]);
 
-	let vimChecker: HTMLInputElement;
+	let vimChecker: HTMLInputElement = $state();
 
 	const delay = 2000;
 
@@ -243,10 +243,10 @@
 <div id="main-div" class="flex flex-row max-xl:flex-col">
 	<div class="border border-gray-300 grow flex flex-col">
 		<div class="ml-2 h-10 flex items-center overflow-x-auto">
-			<button class="btn btn-blue whitespace-nowrap" on:click={compile}>Run (Ctrl+S)</button>
+			<button class="btn btn-blue whitespace-nowrap" onclick={compile}>Run (Ctrl+S)</button>
 			<select
 				bind:value={currentLanguage}
-				on:change={() => languageChange()}
+				onchange={() => languageChange()}
 				name="language"
 				class="ml-2"
 			>
@@ -272,7 +272,7 @@
 				class="ml-1"
 				type="checkbox"
 				name="vim-mode"
-				on:change={toggleVimMode}
+				onchange={toggleVimMode}
 				bind:this={vimChecker}
 			/>
 			<span class="font-bold ml-1">Vim</span>
@@ -285,7 +285,7 @@
 			{/if}
 			<!-- <span on:click={generateShare} class="ml-2">Share</span> -->
 			<span>
-				<button name="share-dialog-btn" class="ml-2" on:click={handleShare}>Share</button>
+				<button name="share-dialog-btn" class="ml-2" onclick={handleShare}>Share</button>
 				<ShareBox bind:this={shareBox} />
 			</span>
 		</div>

@@ -3,10 +3,10 @@
 	import { toast } from '@zerodevx/svelte-toast';
 	import { errorToast } from '$lib/toastPresets';
 
-	let dialog: HTMLDialogElement;
+	let dialog: HTMLDialogElement = $state();
 	// Used as a reference to prevent clicks on the dialog from closing it.
-	let dialogInner: HTMLDivElement;
-	let linkInput: HTMLInputElement;
+	let dialogInner: HTMLDivElement = $state();
+	let linkInput: HTMLInputElement = $state();
 
 	/// Tries to display the share box with the given link.
 	/// Returns true if the box was opened, false if it was already open.
@@ -59,7 +59,7 @@
 	<div class="dialog-inner w-full h-full p-2" bind:this={dialogInner}>
 		<div class="flex justify-between mb-3">
 			<span class="font-bold text-green-800">Your link is ready!</span>
-			<button name="share-dialog-close-btn" on:click={close}>&#x2716</button>
+			<button name="share-dialog-close-btn" onclick={close}>&#x2716</button>
 		</div>
 		<div class="flex">
 			<input
@@ -73,7 +73,7 @@
 			<button
 				name="share-dialog-copy-btn"
 				class="font-bold py-2 px-4 bg-green-700 text-white hover:bg-green-900"
-				on:click={toClipBoard}>Copy</button
+				onclick={toClipBoard}>Copy</button
 			>
 		</div>
 	</div>

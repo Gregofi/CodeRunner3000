@@ -43,8 +43,8 @@
 		}
 	}
 
-	let editorContainer: HTMLElement;
-	let editorParent: HTMLDivElement;
+	let editorContainer: HTMLElement = $state();
+	let editorParent: HTMLDivElement = $state();
 
 	onMount(async () => {
 		monaco = (await import('./monaco')).default;
@@ -91,5 +91,5 @@
 </script>
 
 <div class="h-full" bind:this={editorParent}>
-	<div class="h-full" bind:this={editorContainer} />
+	<div class="h-full" bind:this={editorContainer}></div>
 </div>
