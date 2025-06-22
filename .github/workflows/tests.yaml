@@ -65,13 +65,13 @@ jobs:
     steps:
       - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
       - name: Checkout
         uses: actions/checkout@v4
       - name: build and test
         run: |
           cd website
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm run lint
 
   build-website:
@@ -81,13 +81,13 @@ jobs:
     steps:
       - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
       - name: Checkout
         uses: actions/checkout@v4
       - name: build and test
         run: |
           cd website
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm run build
           pnpm run test:unit
 
@@ -98,7 +98,7 @@ jobs:
     steps:
       - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 9
       - uses: actions/checkout@v4
       - name: Install deps
         run: |
