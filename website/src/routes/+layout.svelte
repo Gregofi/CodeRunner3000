@@ -1,6 +1,11 @@
-<script>
+<script lang="ts">
 	import { SvelteToast } from '@zerodevx/svelte-toast';
 	import '../app.css';
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	let { children }: Props = $props();
 </script>
 
 <div class="flex flex-col">
@@ -23,6 +28,6 @@
 		</nav>
 	</header>
 
-	<slot />
+	{@render children?.()}
 </div>
 <SvelteToast />

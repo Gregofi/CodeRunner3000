@@ -2,8 +2,12 @@
 	import Spinner from '$lib/Spinner.svelte';
 	import type { Result } from '$lib/types';
 
-	export let isRequestPending = false;
-	export let lastResult: Result | null = null;
+	interface Props {
+		isRequestPending?: boolean;
+		lastResult?: Result | null;
+	}
+
+	let { isRequestPending = false, lastResult = null }: Props = $props();
 </script>
 
 <div class="xl:w-1/2 max-xl:h-1/3 flex flex-col">
