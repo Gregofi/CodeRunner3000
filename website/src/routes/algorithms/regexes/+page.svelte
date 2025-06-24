@@ -4,13 +4,22 @@
     determinize,
     glushkov,
     faToDot,
+    type GlState,
   } from "@gregofi1/regex-tooling";
   import { instance } from "@viz-js/viz";
   import { onMount } from "svelte";
 
+  import GlushkovPair from "./GlushkovPair.svelte";
+
   let regexInput = $state("ab*d?c*");
   let svgNFAWrapper: HTMLDivElement;
   let svgDFAWrapper: HTMLDivElement;
+
+  let glushkovMetas: {
+    neighbours: [GlState, GlState][];
+    starts: GlState[];
+    ends: GlState[];
+  } | null = $state(null);
 
   const conversionAlgorithms = [
     { text: "Glushkov", id: "glushkov" },
@@ -22,15 +31,21 @@
     try {
       const parser = new Parser(regexInput);
       const ast = parser.parse();
-      const nfa = glushkov(ast);
+      const { nfa, neighbours, starts, ends } = glushkov(ast);
+      neighbours.sort((a, b) => a[0][1] - b[0][1]);
+      glushkovMetas = {
+        neighbours,
+        starts,
+        ends,
+      };
       const nfaDot = faToDot(nfa);
       const dfa = determinize(nfa);
       const dfaDot = faToDot(dfa);
 
       const dot = await instance();
-      const nfaSvg = await dot.renderString(nfaDot, { format: "svg" });
+      const nfaSvg = dot.renderString(nfaDot, { format: "svg" });
       svgNFAWrapper.innerHTML = nfaSvg;
-      const dfaSvg = await dot.renderString(dfaDot, { format: "svg" });
+      const dfaSvg = dot.renderString(dfaDot, { format: "svg" });
       svgDFAWrapper.innerHTML = dfaSvg;
     } catch (error) {
       console.error("Error processing regex:", error);
@@ -42,7 +57,7 @@
   });
 </script>
 
-<div class="flex flex-col mt-4 p-4 max-w-5xl mx-auto">
+<div class="flex flex-col mt-4 p-4 mx-auto">
   <h1 class="text-2xl font-bold">
     Regular Expression Compiler to Finite Automater
   </h1>
@@ -77,15 +92,59 @@
     />
   </div>
 
-  <div>
-    <h2 class="text-xl font-semibold mb-4 text-center">NFA</h2>
-    <div bind:this={svgNFAWrapper}></div>
-  </div>
+  {#if glushkovMetas}
+    <div class="max-h-[400px] overflow-y-auto">
+      <h2>Glushkov structures</h2>
+      <div class="mt-4">
+        <div class="flex flex-row">
+          <div>
+            <h3 class="text-lg font-semibold">Neighbours</h3>
+            <ul>
+              {#each glushkovMetas.neighbours as [from, to]}
+                <li>
+                  <GlushkovPair pair={from} /> -> <GlushkovPair pair={to} />
+                </li>
+              {/each}
+            </ul>
+          </div>
 
-  <hr class="my-4" />
+          <div class="ml-8">
+            <h3 class="text-lg font-semibold">Starts</h3>
+            <ul>
+              {#each glushkovMetas.starts as start}
+                <li><GlushkovPair pair={start} /></li>
+              {/each}
+            </ul>
+          </div>
 
-  <div>
-    <h2 class="text-xl font-semibold mb-4 text-center">DFA</h2>
-    <div bind:this={svgDFAWrapper}></div>
-  </div>
+          <div class="ml-8">
+            <h3 class="text-lg font-semibold">Ends</h3>
+            <ul>
+              {#each glushkovMetas.ends as end}
+                <li><GlushkovPair pair={end} /></li>
+              {/each}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  {/if}
+</div>
+
+<h2 class="text-xl font-semibold mb-4 text-center">NFA</h2>
+<div class="overflow-x-auto">
+  <div
+    class="flex flex-row justify-center mx-auto w-fit"
+    bind:this={svgNFAWrapper}
+  ></div>
+</div>
+
+<hr class="my-4" />
+
+<h2 class="text-xl font-semibold mb-4 text-center">DFA</h2>
+<div class="overflow-x-auto">
+  <div
+    class="flex flex-row justify-center mx-auto w-fit"
+    bind:this={svgDFAWrapper}
+  ></div>
 </div>
