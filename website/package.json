@@ -17,7 +17,7 @@
     "test:unit": "vitest"
   },
   "devDependencies": {
-    "@gregofi1/regex-tooling": "^0.0.6",
+    "@gregofi1/regex-tooling": "^1.0.2",
     "@playwright/test": "^1.45.2",
     "@sveltejs/adapter-auto": "^3.0.0",
     "@sveltejs/adapter-node": "^2.0.0",
