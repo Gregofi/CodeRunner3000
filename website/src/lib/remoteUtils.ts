@@ -27,8 +27,13 @@ export const sendCodeToServer = async (
   });
   if (response.ok) {
     return await response.json();
+  } else if (response.status === TOO_MANY_REQUESTS) {
+    throw new Error("Too many requests, wait a moment and try again.");
   } else {
-    throw new Error("Could not evaluate");
+    console.error("Error response from server:", response.status);
+    throw new Error(
+      "Server error, could not evaluate code (we are sorry and are working on it!)",
+    );
   }
 };
 

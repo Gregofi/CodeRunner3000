@@ -67,9 +67,9 @@
           lastResult = result;
         }
       })
-      .catch(() => {
+      .catch((e) => {
         lastResult = {
-          stdout: "Server error; Could not run the code.",
+          stdout: e.message,
           stderr: "",
         };
       })

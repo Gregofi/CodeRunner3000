@@ -3,7 +3,8 @@ mod links;
 mod nsjail;
 mod spec;
 
-use axum::http::{Response, StatusCode};
+use axum::extract::MatchedPath;
+use axum::http::{Request, Response, StatusCode};
 use axum::response::IntoResponse;
 use dotenv::dotenv;
 use eval::{eval_handler, initialize_evaluator};
@@ -14,6 +15,8 @@ use log::error;
 use tower_governor::{
     governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer,
 };
+use tower_http::trace::TraceLayer;
+use tracing::info_span;
 
 use std::sync::Arc;
 
@@ -84,7 +87,9 @@ lazy_static! {
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv().ok();
-    env_logger::init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
     initialize_evaluator().await?;
 
     describe_gauge!(
@@ -129,7 +134,7 @@ async fn main() -> Result<()> {
                         .expect("Failed to create rate limit error")
                 }
                 tower_governor::GovernorError::UnableToExtractKey => Response::builder()
-                    .status(StatusCode::BAD_REQUEST)
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
                     .body("Unable to find X-Forwarded-For or X-Real-Ip".into())
                     .expect("Failed to create rate limit error"),
                 tower_governor::GovernorError::Other { .. } => unreachable!(),
@@ -138,10 +143,41 @@ async fn main() -> Result<()> {
             .expect("Failed to create rate limiter"),
     );
 
+    let rate_limit_evaluate = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(3)
+            .burst_size(30)
+            .key_extractor(SmartIpKeyExtractor {})
+            .error_handler(|e| {
+                log::error!("Rate limit evaluator error: {:?}", e);
+                match e {
+                    tower_governor::GovernorError::TooManyRequests { wait_time, .. } => {
+                        Response::builder()
+                            .status(StatusCode::TOO_MANY_REQUESTS)
+                            .header("Retry-After", wait_time)
+                            .body("Too many requests".into())
+                            .expect("Failed to create rate limit error")
+                    }
+                    tower_governor::GovernorError::UnableToExtractKey => Response::builder()
+                        .status(StatusCode::INTERNAL_SERVER_ERROR)
+                        .body("Unable to find X-Forwarded-For or X-Real-Ip".into())
+                        .expect("Failed to create rate limit error"),
+                    tower_governor::GovernorError::Other { .. } => unreachable!(),
+                }
+            })
+            .finish()
+            .expect("Failed to create rate limiter"),
+    );
+
     let state = Arc::new(AppState { redis });
 
     let app = Router::new()
-        .route("/api/v1/evaluate", post(eval_handler))
+        .route(
+            "/api/v1/evaluate",
+            post(eval_handler).layer(GovernorLayer {
+                config: rate_limit_evaluate,
+            }),
+        )
         .route(
             "/api/v1/link/new",
             post(links::new_handler).layer(GovernorLayer {
@@ -151,9 +187,33 @@ async fn main() -> Result<()> {
         .route("/api/v1/link/get/:key", get(links::get_handler))
         .route("/metrics", get(|| async { PROMETHEUS.render() }))
         .route("/liveness", get(|| async { "OK" }))
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
+                let matched_path = request
+                    .extensions()
+                    .get::<MatchedPath>()
+                    .map(MatchedPath::as_str);
+
+                info_span!(
+                    "http_request",
+                    method = ?request.method(),
+                    matched_path,
+                    "x-real-ip" = request
+                        .headers()
+                        .get("X-Real-Ip")
+                        .and_then(|h| h.to_str().ok())
+                        .unwrap_or("unknown"),
+                    "x-forwarded-for" = request
+                        .headers()
+                        .get("X-Forwarded-For")
+                        .and_then(|h| h.to_str().ok())
+                        .unwrap_or("unknown"),
+                )
+            }),
+        )
         .with_state(state);
 
-    println!("Starting server on 0.0.0.0:7800");
+    tracing::info!("Starting server on 0.0.0.0:7800");
     let listener = tokio::net::TcpListener::bind("0.0.0.0:7800").await?;
     Ok(axum::serve(listener, app).await?)
 }
