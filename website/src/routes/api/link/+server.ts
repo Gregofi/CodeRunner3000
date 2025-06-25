@@ -1,5 +1,6 @@
 import type { RequestEvent } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
+import { dev } from "$app/environment";
 
 const TOO_MANY_REQUESTS = 429;
 
@@ -17,8 +18,9 @@ export async function POST({
 
   // This will most likely be behind a proxy. Still, if forwarded is not set
   // we have to send some ip address.
-  const xforwardedfor =
-    request.headers.get("x-forwarded-for") || getClientAddress();
+  const xforwardedfor = dev
+    ? getClientAddress()
+    : request.headers.get("x-forwarded-for");
 
   const response = await fetch(url, {
     method: "POST",
