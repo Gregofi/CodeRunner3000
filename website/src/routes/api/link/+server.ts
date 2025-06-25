@@ -1,13 +1,13 @@
 import type { RequestEvent } from "@sveltejs/kit";
+import { env } from "$env/dynamic/private";
 
 const TOO_MANY_REQUESTS = 429;
-
-const backendUrl = import.meta.env.VITE_CODERUNNER_BACKEND_URL as string;
 
 export async function POST({
   request,
   getClientAddress,
 }: RequestEvent): Promise<Response> {
+  const backendUrl = env.CODERUNNER_BACKEND_URL;
   if (backendUrl === undefined) {
     throw new Error("Backend URL is not set");
   }
