@@ -44,22 +44,19 @@
   function close(): void {
     dialog.close();
   }
-
-  onMount(() => {
-    dialog.addEventListener("click", () => dialog.close());
-    dialogInner.addEventListener("click", (e) => {
-      e.stopPropagation();
-    });
-    linkInput.addEventListener("focus", () => linkInput.select());
-  });
 </script>
 
 <dialog
   data-pw="share-dialog"
   class="border border-gray-400 bg-white sm:min-w-[640px] max-w-4xl"
   bind:this={dialog}
+  onclick={() => dialog.close()}
 >
-  <div class="dialog-inner w-full h-full p-2" bind:this={dialogInner}>
+  <div
+    class="dialog-inner w-full h-full p-2"
+    bind:this={dialogInner}
+    onclick={(e) => e.stopPropagation()}
+  >
     <div class="flex justify-between mb-3">
       <span class="font-bold text-green-800">Your link is ready!</span>
       <button name="share-dialog-close-btn" onclick={close}>&#x2716</button>
@@ -72,6 +69,7 @@
         class="grow border border-gray-200 p-2 mr-2"
         value=""
         bind:this={linkInput}
+        onfocus={() => linkInput.select()}
       />
       <button
         name="share-dialog-copy-btn"
