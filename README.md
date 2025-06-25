@@ -101,3 +101,10 @@ They should be in the evaluator tests.
 ## Release
 Create a new github release.
 The pipeline will build docker image for each component and push it to dockerhub under the latest tag.
+
+# Future caveats
+
+## Anti-cloud features
+Features that prevent the app from being run on cloud in multiple instances.
+
+- Evaluator uses custom ratelimiting, it should all be probably done on the proxy.

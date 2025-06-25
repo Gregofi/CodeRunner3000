@@ -1,5 +1,5 @@
 # ====== Build image ======
-FROM rust:1.74-bookworm as builder
+FROM rust:1.87-bookworm as builder
 
 WORKDIR /rust/app/
 COPY src/ src/

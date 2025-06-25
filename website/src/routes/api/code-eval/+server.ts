@@ -10,21 +10,25 @@ export async function POST({ request }: RequestEvent): Promise<Response> {
   }
   const body = await request.text();
   console.log("Request body", body);
-  try {
-    const response = await fetch(`${url}${api}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body,
-    });
-    return response;
-  } catch (e) {
-    console.log("Failed to compile code");
-    console.log(" - Backend URL", url);
-    console.log(" - Backend API", api);
-    console.log(e);
-    error(500, `Internal server error`);
+
+  // To make rate limiting work properly, we must request X-Forwarded-For here unconditionally.
+  const xforwardedfor = request.headers.get("x-forwarded-for");
+  if (!xforwardedfor) {
+    console.error("No x-forwarded-for header provided");
+    error(500, "No x-forwarded-for header provided");
   }
+
+  const response = await fetch(`${url}${api}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Forwarded-For": xforwardedfor,
+    },
+    body,
+  });
+  if (response.status === 429) {
+    error(429, "Rate limit exceeded");
+  }
+  return response;
 }
