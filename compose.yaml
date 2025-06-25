@@ -28,6 +28,8 @@ services:
     build: evaluator
     # seems needed for nsjail
     privileged: true
+    ports:
+      - 7800:7800
     environment:
       - RUST_LOG=debug
       - REDIS_LINKS_HOST=redis://links-valkey:7900
