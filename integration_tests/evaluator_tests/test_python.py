@@ -9,7 +9,7 @@ def test_simple_python():
     payload = generate_python("""
 print("Hello, World!")
 """)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload, headers={"X-Forwarded-For": "1.1.1.1"})
     assert response.status_code == 200
     values = response.json()
     assert values["stdout"] == "Hello, World!\n"

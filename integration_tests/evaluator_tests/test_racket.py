@@ -10,7 +10,7 @@ def test_simple_racket():
 #lang racket
 (display "Hello, World!\\n")
 """)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload, headers={"X-Forwarded-For": "1.1.1.1"})
     assert response.status_code == 200
     values = response.json()
     assert values["stdout"] == "Hello, World!\n"
