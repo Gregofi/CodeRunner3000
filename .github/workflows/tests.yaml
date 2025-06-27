@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Get changed files in infra folder
         id: changed-infra
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v46
         with:
           files: evaluator/infra/**
       - name: Maybe build infra
