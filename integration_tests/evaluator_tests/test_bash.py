@@ -38,7 +38,7 @@ codes = [
 
 def test_eval_bash_valid_programs():
     for code in codes:
-        response = requests.post(EVALUATOR_ADDRESS, json=generate_bash(code["code"]))
+        response = requests.post(EVALUATOR_ADDRESS, json=generate_bash(code["code"]), headers={"X-Forwarded-For": "1.1.1.1"})
         assert response.status_code == 200, code
         values = response.json()
         assert values["stdout"] == code["stdout"]

@@ -12,7 +12,7 @@ def generate_lua(code: str):
 def test_eval_lua_basic():
     code = "print('Hello, World!')"
     payload = generate_lua(code)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload, headers={"X-Forwarded-For": "1.1.1.1"})
     assert response.status_code == 200
     values = response.json()
     assert values["stdout"] == 'Hello, World!\n'
@@ -36,7 +36,7 @@ print(fact(5))
 print(fact(0))
 """
     payload = generate_lua(code)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload, headers={"X-Forwarded-For": "1.1.1.1"})
     assert response.status_code == 200
     values = response.json()
     assert values["stdout"] == '120\n1\n'
@@ -48,7 +48,7 @@ def test_eval_runtime_error():
 print(x())
 """
     payload = generate_lua(code)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload, headers={"X-Forwarded-For": "1.1.1.1"})
     assert response.status_code == 200
     values = response.json()
     assert values["stdout"] == ''
@@ -60,7 +60,7 @@ fun fact(x) return x end
 print(fact(5))
 """
     payload = generate_lua(code)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload, headers={"X-Forwarded-For": "1.1.1.1"})
     assert response.status_code == 200
     values = response.json()
     assert values["stdout"] == ''
@@ -72,7 +72,7 @@ def test_eval_timeout1():
 while 1 < 2 do end
 """
     payload = generate_lua(code)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload, headers={"X-Forwarded-For": "1.1.1.1"})
     assert response.status_code == 200
     values = response.json()
     assert values["stdout"] == ''
@@ -85,7 +85,7 @@ local file, err = io.open("/etc/shadow", "r")
 print(err)
 """
     payload = generate_lua(code)
-    response = requests.post(EVALUATOR_ADDRESS, json=payload)
+    response = requests.post(EVALUATOR_ADDRESS, json=payload, headers={"X-Forwarded-For": "1.1.1.1"})
     assert response.status_code == 200
     values = response.json()
     # An useless test because /etc/shadow is not created, but it

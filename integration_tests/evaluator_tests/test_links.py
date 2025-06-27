@@ -22,18 +22,19 @@ def test_links():
     for i in range(20):
         # random string
         data = generate_random_string(10)
-        response = requests.post(NEW_LINK, data=data, headers={"X-Forwarded-For": "1.1.1.1"})
+        response = requests.post(NEW_LINK, data=data, headers={"X-Forwarded-For": "1.1.2.1"})
         assert response.status_code == 200, f"try {i}"
 
         key = response.json()["key"]
         
         response = requests.get(GET_LINK + key)
+
         assert response.status_code == 200
         returned_data = response.json()["value"]
         assert returned_data == data
     
-    response = requests.post(NEW_LINK, data="test", headers={"X-Forwarded-For": "1.1.1.1"})
+    response = requests.post(NEW_LINK, data="test", headers={"X-Forwarded-For": "1.1.2.1"})
     assert response.status_code == 429
 
-    response = requests.post(NEW_LINK, data="test", headers={"X-Forwarded-For": "2.1.1.1"})
+    response = requests.post(NEW_LINK, data="test", headers={"X-Forwarded-For": "1.1.2.2"})
     assert response.status_code == 200
