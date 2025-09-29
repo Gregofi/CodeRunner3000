@@ -172,6 +172,7 @@ async fn execute(spec: &RunSpec, payload: &RequestPayload, eval_id: &str) -> Res
             .iter()
             .find(|c| c.name == *compiler)
             .with_context(|| format!("Compiler '{}' not found", compiler))?;
+        command = str::replace(&command, "${COMPILER_NAME}", &compiler_spec.name);
         let compiler_path = match &compiler_spec.path {
             Some(path) => path.to_owned(),
             None => format!("{}/{}/{}", *COMPILERS_PATH, spec.name, compiler_spec.name),

@@ -88,3 +88,17 @@
   commands:
     - cp ${SOURCE_FILE} source.mjl
     - ${EXECUTOR} interpret source.mjl
+
+- name: go
+  compilers:
+  - name: 1.25.1
+    path: /opt/evaluator/compilers/go/1.25.1/bin/go
+  - name: 1.24.7
+    path: /opt/evaluator/compilers/go/1.24.7/bin/go
+  - name: 1.23.12
+    path: /opt/evaluator/compilers/go/1.23.12/bin/go
+  commands:
+    - cp ${SOURCE_FILE} source.go
+    - GOCACHE="/opt/evaluator/compilers/go/${COMPILER_NAME}/.gocache" ${COMPILER} build -o source ${COMPILER_ARGS} source.go
+    - rm source.go
+    - ./source ${SOURCE_ARGS}

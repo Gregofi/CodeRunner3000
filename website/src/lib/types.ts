@@ -41,6 +41,7 @@ export type LangKey =
   | "python3"
   | "racket"
   | "bash"
+  | "go"
   | "c"
   | "cpp"
   | "rust"

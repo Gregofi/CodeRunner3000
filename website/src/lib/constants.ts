@@ -36,6 +36,13 @@ export const languages: { [key in LangKey]: ILanguage } = {
     text: "Bash",
     executors: ["bash-bookworm"],
   },
+  go: {
+    name: "go",
+    server_name: "go",
+    editor_name: "go",
+    text: "Go",
+    compilers: ["1.25.1", "1.24.7", "1.23.12"],
+  },
   c: {
     name: "c",
     server_name: "c",

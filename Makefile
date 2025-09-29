@@ -1,7 +1,7 @@
 
 .PHONY: build prepare up all test
 
-up: 
+up: build 
 	docker compose up
 
 prepare:
