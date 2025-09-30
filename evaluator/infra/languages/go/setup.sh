@@ -11,7 +11,7 @@ setup_go_version() {
     GO_FTP="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
     echo "Downloading $GO_FTP"
     wget "${GO_FTP}"
-    tar -xzf go${GO_VERSION}.linux-amd64.tar.gz
+    tar -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
     mkdir -p "${COMPILERS_DIR}"
     mv go "${COMPILERS_DIR}/${GO_VERSION}"
     GOCACHE="${COMPILERS_DIR}/${GO_VERSION}/.gocache" "${COMPILERS_DIR}/${GO_VERSION}/bin/go" build -v std
