@@ -4,12 +4,12 @@ mod nsjail;
 mod spec;
 
 use axum::extract::MatchedPath;
-use axum::http::{Request, Response, StatusCode};
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use chrono::Local;
 use dotenv::dotenv;
 use eval::{eval_handler, initialize_evaluator};
-use metrics::{describe_counter, describe_gauge};
+use metrics::{describe_counter, describe_histogram};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 
 use tower_governor::{
@@ -20,7 +20,13 @@ use tracing::{error, info_span, warn};
 
 use std::sync::Arc;
 
-use axum::{routing::get, routing::post, Router};
+use axum::{
+    extract::Request,
+    middleware::{self, Next},
+    response::Response,
+    routing::{get, post},
+    Router,
+};
 
 use anyhow::Result;
 
@@ -80,6 +86,8 @@ impl From<redis::RedisError> for AppError {
 
 lazy_static! {
     static ref PROMETHEUS: PrometheusHandle = PrometheusBuilder::new()
+        .add_global_label("project", "coderunner3000")
+        .add_global_label("app", "evaluator")
         .install_recorder()
         .expect("Failed to create PrometheusBuilder");
 }
@@ -121,6 +129,26 @@ async fn update_gocache_job() {
     }
 }
 
+async fn metrics_middleware(req: Request, next: Next) -> Response {
+    let now = std::time::Instant::now();
+    let resp = next.run(req).await;
+
+    let path = resp
+        .extensions()
+        .get::<MatchedPath>()
+        .map(MatchedPath::as_str)
+        .unwrap_or("unknown")
+        .to_string();
+
+    let elapsed = now.elapsed().as_secs_f64();
+    if resp.status().is_server_error() {
+        metrics::increment_counter!("errors_total", "path" => path.clone());
+    }
+
+    metrics::histogram!("request_duration_seconds", elapsed, "path" => path);
+    resp
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv().ok();
@@ -129,27 +157,13 @@ async fn main() -> Result<()> {
         .init();
     initialize_evaluator().await?;
 
-    describe_gauge!(
-        "http_connections_active_total",
-        "Total number of active connections"
+    describe_histogram!(
+        "request_duration_seconds",
+        "Duration of evaluator requests in seconds"
     );
     describe_counter!(
-        "evaluator_requests_total",
-        "Number of requests to the evaluator"
-    );
-    describe_counter!(
-        "evaluator_errors_total",
+        "errors_total",
         "Total number of errors (panics) in the evaluator"
-    );
-    describe_counter!(
-        "submitted_program_errors_total",
-        "Number of errors in the user submitted program"
-    );
-
-    // Links
-    describe_counter!(
-        "link_new_requests_total",
-        "Number of requests to the link service"
     );
 
     // Start Go cache updater
@@ -250,6 +264,7 @@ async fn main() -> Result<()> {
                 )
             }),
         )
+        .layer(middleware::from_fn(metrics_middleware))
         .with_state(state);
 
     tracing::info!("Starting server on 0.0.0.0:7800");
