@@ -130,15 +130,14 @@ async fn update_gocache_job() {
 }
 
 async fn metrics_middleware(req: Request, next: Next) -> Response {
+    let mut path = req.uri().path().to_string();
+
     let now = std::time::Instant::now();
     let resp = next.run(req).await;
 
-    let path = resp
-        .extensions()
-        .get::<MatchedPath>()
-        .map(MatchedPath::as_str)
-        .unwrap_or("unknown")
-        .to_string();
+    if resp.status() == StatusCode::NOT_FOUND {
+        path = "<unknown>".to_string();
+    }
 
     let elapsed = now.elapsed().as_secs_f64();
     if resp.status().is_server_error() {
