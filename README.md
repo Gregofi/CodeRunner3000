@@ -2,7 +2,7 @@
 A multi-component monorepo hosting the necessary components for the CodeRunner3000.
 It is a website allowing code execution, partially inspired by [Compiler Explorer](https://godbolt.org/).
 It does however not aim to have disassembly like Compiler Explorer.
-foo
+
 ## The architecture
 There are be multiple components:
 - Website = Svelte website, what the user faces.
