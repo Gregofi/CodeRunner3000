@@ -1,7 +1,7 @@
 # Build image
-FROM node:20-slim as build
+FROM node:25-slim as build
 
-RUN corepack enable
+RUN npm install -g pnpm
 
 WORKDIR /app
 COPY . .
@@ -10,7 +10,7 @@ RUN pnpm run build
 
 
 # Runtime image
-FROM node:20.9.0-alpine3.18
+FROM node:25.9.0-alpine3.22
 
 WORKDIR /www/app
 

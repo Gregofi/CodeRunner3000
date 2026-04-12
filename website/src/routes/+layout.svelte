@@ -12,7 +12,7 @@
   <!-- DO NOT CHANGE THE HEIGHT!!! It is bound to the height of the body in code/+page.svelte,
     see #main div CSS rules -->
   <header
-    class="border-b flex flex-col items-center
+    class="border-b border-gray-200 flex flex-col items-center
                justify-between sm:flex-row sm:px-4 h-12 align-stretch"
   >
     <span class="text-lg"><tt>CodeRunner3000</tt></span>
