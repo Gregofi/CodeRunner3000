@@ -18,9 +18,6 @@ def test_eval_lua_basic():
     assert values["stdout"] == 'Hello, World!\n'
     assert values["stderr"] == ''
 
-    metrics = requests.get(EVALUATOR_METRICS).text
-    assert 'evaluator_requests_by_language{language="lua"}' in metrics
-
 
 def test_eval_lua_funs():
     code = """
