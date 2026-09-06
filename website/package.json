@@ -33,7 +33,7 @@
     "eslint-plugin-svelte": "^3.17.0",
     "globals": "^17.5.0",
     "monaco-editor": "0.55.1",
-    "postcss": "^8.5.9",
+    "postcss": "^8.5.23",
     "prettier": "^3.8.2",
     "prettier-plugin-svelte": "^3.5.1",
     "svelte": "^5.55.3",
